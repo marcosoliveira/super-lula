@@ -546,6 +546,7 @@
     if (L.scissors) for (const s of L.scissors) if (s[0] * 16 >= x - 80) s.done = false;
     G.cam = clampCam(h.x - G.W * .4);
     L.onRespawn && L.onRespawn(G);
+    clearDpad(G.cam);
     G.setState('play');
   }
   function respawnBoss() {
@@ -563,8 +564,24 @@
     L.boss = SL.Bosses.make(L.bossList[L.bossIdx], G, L.arena);
     Object.assign(h, newHero(L.arena.x0 + 24, 0)); h.y = groundY(h.x) - h.h; h.inv = 60;
     L.onRespawn && L.onRespawn(G);
+    clearDpad(L.arena.cam(G)); h.inv = 60;
     bossIntro(true);
   }
+  // no celular, o herói começa 10px à frente dos botões direcionais (canto esquerdo), para não ficar escondido embaixo deles
+  function touchSafeX() {
+    if (!G.touch) return 0;
+    const sp = $('dpad').querySelectorAll('span'), r = cv.getBoundingClientRect();
+    if (!sp.length || !r.width) return 0;
+    const right = sp[sp.length - 1].getBoundingClientRect().right;
+    if (!right) return 0;
+    return Math.max(0, Math.ceil((right + 10 - r.left) * G.W / r.width));
+  }
+  function clearDpad(cam) {
+    const h = G.hero, min = touchSafeX();
+    if (!h || !min || h.x - cam >= min) return;
+    h.x = cam + min; h.y = groundY(h.x) - h.h;
+  }
+  G.clearDpad = clearDpad; G.touchSafeX = touchSafeX;
   function groundY(px) {
     const tx = Math.floor((px + 5) / 16);
     for (let ty = 1; ty < 12; ty++) { const ch = G.tile(tx, ty); if (SOLID.has(ch) || ONEWAY.has(ch)) return ty * 16; }
@@ -617,11 +634,13 @@
     G.L = L; hudKey = ''; hudDirty = true;
     G.hero = newHero(L.start.x, 0); G.hero.y = groundY(L.start.x) - 18;
     G.cam = clampCam(G.hero.x - G.W * .4);
+    clearDpad(G.cam);
     hudDirty = true;
     const goMission = () => {
       A.play(L.music);
       const ph = C.fases[n];
       G.dialog([{ tag: C.missao.etiqueta, title: `FASE ${n} · ${ph.nome}`, body: ph.abertura, cmd: ph.comando }], () => {
+        clearDpad(G.cam);
         G.setState('play');
         L.onStart && L.onStart(G);
       }, 'play');
@@ -821,7 +840,7 @@
       x.textAlign = 'center';
       wrap(P.rodape, 920, 40, y + 10, '34px VT323, monospace', '#b8bde8');
     } else {
-      y = wrap(C.urna.texto, 900, 64, y + 40, '60px VT323, monospace', '#fff8e7');
+      y = wrap(C.urna.compartilhar || C.urna.texto, 900, 64, y + 40, '60px VT323, monospace', '#fff8e7');
     }
     // selo de IA
     if (C.selo) {
@@ -1156,7 +1175,7 @@
     L.deco && L.deco(ctx, G, cam);
     drawTiles(cam);
     if (L.gloom > 0) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); gloomPass(L.gloom); ctx.restore(); }
-    for (const cp of L.cps) D.flag(ctx, cp.x, 160 - 32, cp.on);
+    for (const cp of L.cps) D.flag(ctx, cp.x, 160 - 32, cp.on, G.t);
     if (L.goalX != null) D.goal(ctx, L.goalX, 160 - 64, G.t);
     for (const t of L.targets) t.draw(ctx, G);
     for (const m of L.movers) m.draw(ctx, G);

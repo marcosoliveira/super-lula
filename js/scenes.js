@@ -517,14 +517,14 @@
       ground(c, W, 150, '#5a5d65', '#3a3d45');
       const P = SL.person; const fila = [P(20, { long: true, suit: '#e85a9a' }), P(21, { suit: '#9250b4' }), P(22, { suit: '#2449c9' }), P(23, { long: true, suit: '#d8322c' })];
       fila.forEach((p, i) => { const x = 50 + i * 60; spr(c, SL.npc(p), 'stand', -1, x, 130); const bit = t > 40 + i * 30; D.box(c, x - 4, 140, 8, 10, '#fff'); if (bit) D.r(c, x + 1, 140, 3, 4, '#3a3d45'); });
-      const lx = W + 20 - t * 1.6; SL.Bosses.drawLion(c, lx, 110, t, false, 1);
+      const lx = W + 20 - t * 1.6; SL.Bosses.drawLion(c, lx, 110, t, false, 1, -1);
     }, 200),
     fr(12, 1, (c, t, G) => {
       const W = G.W; sky(c, W, '#ff9a6b', '#4a3f7a');
       D.r(c, W / 2 - 60, 50, 120, 142, '#6cc2f1'); for (let y = 56; y < 192; y += 10) D.r(c, W / 2 - 56, y, 112, 2, '#4a90b8');
       D.r(c, W / 2 - 40, 30, 80, 20, '#3a3d45'); for (let i = 0; i < 3; i++) D.box(c, W / 2 - 34 + i * 24, 34, 16, 14, '#ffd21f');
       D.box(c, W / 2 - 28, 18, 56, 10, '#ffd21f'); D.text(c, C.fases[12].textoMotor.placa, W / 2, 21, '#1a1020', 4, 'center', false);
-      SL.Bosses.drawLion(c, 20, 140, 0, false, .8);
+      SL.Bosses.drawLion(c, 20, 132, 0, false, 1, 1);
     }, 130)
   ];
 
@@ -605,9 +605,13 @@
   function renderUrna(G) {
     const txt = C.urna.texto, s = txt.slice(0, Math.floor(U.n));
     const done = U.n >= txt.length;
-    let h = `<div class="u-top">${SL.G.esc('SUPER LULA · ' + C.abertura.subtitulo)}</div><p>${SL.G.esc(s)}${done ? '' : '<span style="opacity:.4">▌</span>'}</p>`;
+    let h = `<div class="u-top">${SL.G.esc('SUPER LULA · ' + C.abertura.subtitulo)}</div>`;
+    if (C.urna.titulo) h += `<h2>${SL.G.esc(C.urna.titulo)}</h2>`;
+    h += `<p>${SL.G.esc(s)}${done ? '' : '<span style="opacity:.4">▌</span>'}</p>`;
     if (done) h += `<div class="u-hint">${SL.G.esc(G.tk('{PULO} ▶ ' + C.urna.confirma))}</div>`;
-    $('uScr').innerHTML = h;
+    const scr = $('uScr'); scr.innerHTML = h;
+    // o texto é longo: acompanha a digitação rolando para baixo
+    scr.scrollTop = scr.scrollHeight;
     $('uCf').classList.toggle('blink', done);
   }
   S.urnaStep = function (G) {
@@ -620,7 +624,7 @@
       return;
     }
     if (U.phase === 'fim') {
-      if (U.t > 110) { U.phase = 'credits'; U.t = 0; buildCredits(G); G.setState('credits'); }
+      if (U.t > 110) { U = null; G.save.end = true; G.persist(); G.finalCard(); }
       return;
     }
     if (U.phase === 'credits') {

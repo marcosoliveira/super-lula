@@ -289,7 +289,14 @@
         case 'mount': tone(392, t, .08, 'square', .05, B); tone(523, t + .08, .12, 'square', .05, B); break;
         case 'star': [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, t + i * .05, .1, 'square', .05, B)); break;
         case 'clear': [523, 659, 784, 659, 784, 1047].forEach((f, i) => tone(f, t + i * .11, .14, 'square', .055, B)); break;
-        case 'roar': noise(t, .5, .12, 150, B); tone(110, t, .5, 'sawtooth', .05, B, { slide: 70 }); break;
+        // aviso: o leão puxa o ar antes de rugir
+        case 'roarIn': noise(t, .4, .07, 1500, B); tone(80, t, .4, 'triangle', .07, B, { slide: 170 }); break;
+        // rugido: ronco grave e longo, com tremor
+        case 'roar':
+          noise(t, .95, .22, 110, B);
+          tone(160, t, .95, 'sawtooth', .1, B, { slide: 55 }); tone(166, t, .95, 'square', .05, B, { slide: 58 });
+          for (let i = 0; i < 8; i++) tone(120 - i * 6, t + i * .11, .13, 'sawtooth', .07, B);
+          break;
         case 'suck': tone(200, t, .4, 'sine', .06, B, { slide: 600 }); break;
       }
     }

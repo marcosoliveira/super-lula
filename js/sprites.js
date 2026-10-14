@@ -286,23 +286,33 @@
   };
   // Bandeira do Brasil usada como capa: presa nos ombros, esvoaça para trás do Lula
   D.cape = (c, x, y, face, t, speed) => {
-    // x,y = canto do sprite (14 x 20) na altura dos ombros; a capa cai pelas costas e esvoaça com a velocidade
-    const sp = Math.min(1, Math.abs(speed) / 2.3);
-    const wave = Math.sin(t * (sp > .1 ? .4 : .08)) * (sp > .1 ? 1.5 : .5);
+    // x,y = canto do sprite (14 x 20) na altura dos ombros; a capa cai pelas costas e tremula com a velocidade
+    const sp = Math.min(1, Math.abs(speed) / 2.3), run = sp > .1;
     const back = -face;                                     // lado das costas
     const sx = x + 7 + back * 2;                            // centro dos ombros, puxado para trás
     const len = 13 - sp * 3;                                // correndo, sobe
-    const out = 4 + sp * 9 + wave;                          // quanto a ponta vai para trás
-    const p = [[sx - 4, y], [sx + 4, y], [sx + back * out + 5, y + len + 1], [sx + back * out - 5, y + len - 1]];
-    const path = (pts) => { c.beginPath(); pts.forEach(([a, b2], i) => i ? c.lineTo(a, b2) : c.moveTo(a, b2)); c.closePath(); };
+    const out = 4 + sp * 9;                                 // quanto a ponta vai para trás
+    const dx = back * out, dy = len, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, px = -uy, py = ux;
+    // onda que corre do ombro para a ponta (mais forte na ponta e quanto mais rápido ele corre)
+    const amp = run ? .5 + sp * .9 : .35, spd = run ? .3 + sp * .2 : .07, N = 8;
+    const A = [], B = [];
+    let mid = null;
+    for (let i = 0; i <= N; i++) {
+      const f = i / N, w = Math.sin(t * spd - f * 4) * amp * f;
+      const cx = sx + dx * f + px * w, cy = y + dy * f + py * w, hw = 4 + f * 1.4;
+      A.push([cx + px * hw, cy + py * hw]); B.push([cx - px * hw, cy - py * hw]);
+      if (i === 5) mid = [cx, cy];
+    }
+    const pts = A.concat(B.reverse());
     c.save();
-    path(p.map(([a, b2], i) => [a + (i < 2 ? (i ? 1 : -1) : (i === 2 ? 1 : -1)), b2 + (i > 1 ? 1 : -1)])); c.fillStyle = '#1a1020'; c.fill();
-    path(p); c.fillStyle = '#17a34a'; c.fill(); c.clip();
-    // losango amarelo e círculo azul no meio da capa
-    const mx = (p[0][0] + p[1][0] + p[2][0] + p[3][0]) / 4, my = y + len * .55;
-    c.fillStyle = '#ffd21f'; c.beginPath(); c.moveTo(mx, my - 5); c.lineTo(mx + 7, my); c.lineTo(mx, my + 5); c.lineTo(mx - 7, my); c.closePath(); c.fill();
-    c.fillStyle = '#2449c9'; c.beginPath(); c.arc(mx, my, 2.4, 0, 7); c.fill();
-    c.restore();
+    c.beginPath(); pts.forEach(([a, b2], i) => i ? c.lineTo(a, b2) : c.moveTo(a, b2)); c.closePath();
+    c.lineJoin = 'round'; c.lineWidth = 2; c.strokeStyle = '#1a1020'; c.stroke();
+    c.fillStyle = '#17a34a'; c.fill(); c.clip();
+    // losango amarelo e círculo azul, acompanhando a onda
+    c.translate(mid[0], mid[1]); c.rotate(Math.atan2(uy, ux) - Math.PI / 2);
+    c.fillStyle = '#ffd21f'; c.beginPath(); c.moveTo(0, -4); c.lineTo(6, 0); c.lineTo(0, 4); c.lineTo(-6, 0); c.closePath(); c.fill();
+    c.fillStyle = '#2449c9'; c.beginPath(); c.arc(0, 0, 2.2, 0, 7); c.fill();
+    c.restore(); c.lineWidth = 1;
   };
   D.flagIcon = (c, x, y, w, h) => { // bandeira do Brasil retangular (ícone)
     D.r(c, x, y, w, h, '#1a1020'); D.r(c, x + 1, y + 1, w - 2, h - 2, '#17a34a');
@@ -317,9 +327,18 @@
     D.r(c, x + 5, y + 1, 3, 1, '#ffffff'); D.r(c, x + 4, y + 2, 5, 2, '#ffffff'); D.r(c, x + 5, y + 4, 3, 1, '#ffffff');
     D.r(c, x + 5, y + 2, 3, 1, '#17a34a'); D.r(c, x + 6, y + 3, 1, 1, '#17a34a');
   };
-  D.flag = (c, x, y, on) => { // checkpoint: bandeirola vermelha lisa
+  // checkpoint: bandeirola vermelha lisa; ao ser ativada ganha uma estrela branca no meio e passa a tremular
+  const FLAG_STAR = ['..#..', '#####', '.###.', '.#.#.'];
+  D.flag = (c, x, y, on, t) => {
     D.r(c, x + 1, y, 2, 32, '#5a3a24');
-    D.r(c, x + 3, y + 1, 12, 8, '#1a1020'); D.r(c, x + 3, y + 2, 11, 6, on ? '#3ec04a' : '#e8412c');
+    const W = 16, dy = i => on ? Math.round(Math.sin((t || 0) * .18 - i * .7) * (i / (W - 1)) * 1.5) : 0;
+    for (let i = 0; i < W; i++) {
+      const d = dy(i);
+      D.r(c, x + 3 + i, y + 1 + d, 1, 12, '#1a1020');
+      if (i < W - 1) D.r(c, x + 3 + i, y + 2 + d, 1, 10, '#e8412c');
+    }
+    // a estrela acompanha o tecido inteira (sem se deformar)
+    if (on) { const d = dy(10); FLAG_STAR.forEach((row, sy) => { for (let sx = 0; sx < 5; sx++) if (row[sx] === '#') D.r(c, x + 8 + sx, y + 5 + sy + d, 1, 1, '#ffffff'); }); }
   };
   D.goal = (c, x, y, t) => {
     D.r(c, x + 6, y, 3, 64, '#f4f2ec'); D.r(c, x + 5, y - 3, 5, 5, '#ffd21f');

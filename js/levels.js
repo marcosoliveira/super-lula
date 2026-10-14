@@ -33,12 +33,23 @@
       c.fillStyle = col; c.beginPath(); c.ellipse(x, y, r, r * .8, 0, Math.PI, 0); c.fill();
     }
   };
-  BG.city = (c, cam, par, base, col, seed, W, win) => {
+  // janelas: o padrão é fixo por prédio (não muda com a câmera); só ~10% delas acendem/apagam devagar ao longo da fase (t = quadro)
+  BG.city = (c, cam, par, base, col, seed, W, win, t) => {
     const off = cam * par;
     for (let i = Math.floor(off / 34) - 1; i < Math.floor((off + W) / 34) + 2; i++) {
-      const h = 30 + rnd(i + seed) * 60, w = 22 + rnd(i * 7 + seed) * 12, x = i * 34 - off;
+      const h = 30 + rnd(i + seed) * 60, w = 22 + rnd(i * 7 + seed) * 12, x = Math.round(i * 34 - off);
       D.r(c, x, base - h, w, h, col);
-      if (win) for (let yy = base - h + 5; yy < base - 6; yy += 8) for (let xx = x + 4; xx < x + w - 4; xx += 6) if (rnd(xx * 3 + yy) > .45) D.r(c, xx, yy, 2, 3, win);
+      if (!win) continue;
+      let row = 0;
+      for (let yy = base - h + 5; yy < base - 6; yy += 8, row++) {
+        let col2 = 0;
+        for (let xx = x + 4; xx < x + w - 4; xx += 6, col2++) {
+          const k = i * 1013 + row * 37 + col2 * 7 + seed * 101;
+          let on = rnd(k) > .45;
+          if (t != null && rnd(k + .5) < .1) { const per = 400 + rnd(k + .25) * 800; if (Math.floor((t + rnd(k + .75) * per) / per) % 2) on = !on; }
+          if (on) D.r(c, xx, yy, 2, 3, win);
+        }
+      }
     }
   };
   BG.sun = (c, x, y, r, col) => { c.fillStyle = col; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); };
@@ -1054,30 +1065,55 @@
       person(22, { suit: '#2449c9', pants: '#18215a' }), person(23, { long: true, suit: '#d8322c', shirt: '#d8322c' })
     ];
     L.line = [];
-    for (let i = 0; i < 10; i++) { const n = SL.mkNPC(fila[i % 4], (14 + i * 9) * 16, 160, { face: -1, always: true }); L.ents.push(n); L.line.push(n); }
     // subida do prédio até a cobertura
     b.g(112, 176);
     b.p(114, 8, 3).p(118, 6, 3).p(122, 4, 3).X(126, 4, 2, 6).p(130, 6, 2).p(134, 8, 2);
     b.cp(114);
     b.arena(['leao']);
+    // fila espalhada pela avenida e pelo térreo do prédio, até perto da arena (só em chão firme, sem buraco nem bloco em cima)
+    const firme = tx => [tx - 1, tx, tx + 1].every(x => L.g[10][x] === '#' && L.g[9][x] === ' ' && L.g[8][x] === ' ');
+    for (let i = 0; i < 10; i++) {
+      let tx = Math.round(14 + i * 14.5); while (!firme(tx)) tx++;
+      const n = SL.mkNPC(fila[i % 4], tx * 16, 160, { face: -1, always: true }); L.ents.push(n); L.line.push(n);
+    }
     // leão que corre na frente soltando contracheques
-    L.lion = { x: 40, t: 0 };
+    // começa no meio da tela, em pé sobre o chão (y do chão = 160)
+    L.lion = { x: null, t: 0 };
+    // 16 contracheques espalhados por igual do começo até o fim da avenida; se ainda faltar algum, continua soltando
+    // a perseguição vai até a porta da arena (o leão espera ali e depois vira o chefe)
+    const CHASE_END = 150 * 16, LION_MAX = 153 * 16 - 64;
+    const lionInit = (G) => {
+      const ln = L.lion; if (ln.x != null) return;
+      ln.x = G.cam + G.W / 2 - 32; ln.drop = 0; ln.passed = 0; ln.extra = 0;
+    };
     L.autoscroll = (G) => {
       const h = G.hero;
       if (h.x > 110 * 16) return false;
       const target = G.clampCam(Math.max(L.scroll || 0, h.x + 5 - G.W * .62));
       L.scroll = Math.min(G.clampCam(110 * 16 - G.W * .4), Math.max(target, (L.scroll || 0) + .75));
       G.cam = L.scroll;
-      if (h.x < G.cam + 2) { h.x = G.cam + 2; if (h.vx < 0) h.vx = 0; }
+      // no celular, a borda esquerda fica à frente dos direcionais
+      const lim = G.cam + Math.max(2, G.touchSafeX ? G.touchSafeX() : 0);
+      if (h.x < lim) { h.x = lim; if (h.vx < 0) h.vx = 0; }
       return true;
     };
-    L.onRespawn = (G) => { L.scroll = G.clampCam(G.hero.x - 60); };
+    L.onRespawn = (G) => { L.scroll = G.clampCam(G.hero.x - 60); G.cam = L.scroll; };
     L.update = (G) => {
-      const ln = L.lion; ln.t++;
+      lionInit(G); const ln = L.lion; ln.t++;
       const h = G.hero;
-      if (h.x < 110 * 16) {
-        ln.x += (Math.max(h.x + 140, ln.x + .6) - ln.x) * .03;
-        if (ln.t % 70 === 0 && ln.x < 108 * 16) G.addEnt(mkE('contracheque', ln.x, 120 + (ln.t % 3) * 10, { vx: -.5, always: true, collect: payCollect }));
+      if (h.x < CHASE_END) {
+        ln.x = Math.min(LION_MAX, ln.x + (Math.max(h.x + 140, ln.x + .6) - ln.x) * .03);
+        // pula por cima de blocos e paredes que saem do chão (não atravessa)
+        const solid = (tx, ty) => { const ch = G.tile(tx, ty); return ch === 'X' || ch === '#' || ch === 'U'; };
+        let top = 160;
+        for (let px = ln.x + 4; px < ln.x + 60; px += 8) { const tx = Math.floor(px / 16); let r = 10; while (r > 0 && solid(tx, r - 1)) r--; top = Math.min(top, r * 16); }
+        const ty = top - 40; ln.y = ln.y == null ? ty : (ty < ln.y ? Math.max(ty, ln.y - 6) : Math.min(ty, ln.y + 4));
+        const solta = (x) => { G.addEnt(mkE('contracheque', x, 120 + (ln.drop % 3) * 10, { vx: -.5, always: true, collect: payCollect })); ln.drop++; };
+        // só solta o contracheque quando passa por uma pessoa da fila (morde o contracheque dela)
+        const fila = L.line;
+        while (ln.passed < fila.length && ln.x + 32 >= fila[ln.passed].x + 6) { const p = fila[ln.passed++]; solta(p.x); G.sfx('bite'); }
+        // rede de segurança: se já passou por todos e ainda faltam contracheques, solta um de vez em quando na porta da arena
+        if (ln.passed >= fila.length && L.obj && L.obj.n < L.obj.max && !L.ents.some(e => e.collect === payCollect && !e.dead && e.x > G.cam - 16) && ++ln.extra % 90 === 0) solta(ln.x + 8);
       }
     };
     function payCollect(G) {
@@ -1087,19 +1123,45 @@
     }
     L.bg = (c, cam, G) => {
       BG.sun(c, G.W * .5, 120, 26, '#ffb36b');
-      BG.city(c, cam, .2, 160, '#4a3f6a', 3, G.W, '#ffd21f');
-      BG.city(c, cam, .45, 166, '#3a5a7a', 9, G.W, '#6cc2f1');
+      BG.city(c, cam, .2, 160, '#4a3f6a', 3, G.W, '#ffd21f', G.t);
+      BG.city(c, cam, .45, 166, '#3a5a7a', 9, G.W, '#6cc2f1', G.t);
       // prédio espelhado com a cobertura NÃO PERTURBE
       const px = 1700 - cam * .45; D.r(c, px, 20, 120, 150, '#6cc2f1'); for (let y = 26; y < 160; y += 10) D.r(c, px + 4, y, 112, 2, '#4a90b8');
       D.r(c, px + 30, 8, 60, 12, '#3a3d45'); D.box(c, px + 36, 0, 48, 8, '#ffd21f'); D.text(c, C.fases[12].textoMotor.placa, px + 60, 2, '#1a1020', 4, 'center', false);
     };
+    // avenida dos bancos: fachadas genéricas (nomes inventados) com caixa eletrônico
+    const TM = C.fases[12].textoMotor;
+    const BANCOS = [4, 24, 46, 62, 78, 100].map((tx, i) => ({ x: tx * 16, nome: TM.bancos[i % TM.bancos.length], cor: ['#8a8f99', '#7a6a5a', '#6a7a8a'][i % 3] }));
+    const banco = (c, b) => {
+      const x = b.x;
+      D.r(c, x - 2, 109, 68, 3, '#3a3d45');
+      D.box(c, x, 112, 64, 48, b.cor);
+      D.r(c, x + 1, 113, 62, 10, '#1a2a4a'); D.text(c, b.nome, x + 32, 116, '#ffd21f', 4, 'center', false);
+      D.box(c, x + 6, 128, 12, 14, '#bfe6ff'); D.r(c, x + 11, 129, 1, 12, b.cor);
+      D.box(c, x + 24, 130, 16, 30, '#6cc2f1'); D.r(c, x + 31, 131, 1, 29, '#4a90b8'); D.r(c, x + 26, 132, 4, 10, '#d8f0ff');
+      // caixa eletrônico
+      D.box(c, x + 46, 134, 12, 26, '#5a5f68'); D.r(c, x + 48, 137, 8, 6, '#6cc2f1'); D.r(c, x + 48, 146, 8, 5, '#c4c9d1'); D.r(c, x + 49, 153, 6, 1, '#1a1020');
+    };
+    // painel de LED: as barras se invertem conforme os contracheques voltam para a fila
+    L.ledK = 0;
+    const PAINEIS = [34 * 16, 90 * 16];
+    const painel = (c, x, G) => {
+      const k = L.ledK, P = TM.painel;
+      D.r(c, x + 46, 84, 4, 76, '#3a3d45');
+      D.box(c, x, 34, 96, 52, '#101418', '#3a3d45');
+      D.text(c, P.titulo, x + 48, 38, '#ffb000', 4, 'center', false);
+      D.text(c, P.pobre, x + 6, 48, '#ffd21f', 4, 'left', false);
+      D.r(c, x + 6, 55, 84, 5, '#2a2f38'); D.r(c, x + 6, 55, Math.round(84 * (1 - k)), 5, '#ff5a3a');
+      D.text(c, P.rico, x + 6, 64, '#ffd21f', 4, 'left', false);
+      D.r(c, x + 6, 71, 84, 5, '#2a2f38'); D.r(c, x + 6, 71, Math.round(84 * (.1 + .9 * k)), 5, '#3ec04a');
+    };
     L.deco = (c, G) => {
-      // cameo do Herdeiro na sacada pendurando a plaquinha ISENTO
-      const sx = 80 * 16; D.r(c, sx - 8, 92, 60, 4, '#3a3d45'); D.r(c, sx - 8, 60, 60, 32, '#4a90b8'); D.r(c, sx + 26, 64, 18, 28, '#2a3a5a');
-      D.box(c, sx + 20, 68, 30, 10, '#f4f2ec'); D.text(c, C.fases[12].textoMotor.isento, sx + 35, 71, '#d8322c', 4, 'center', false);
-      SL.drawSprite(c, SL.S.flavio, 'stand', 1, sx + 8, 72);
+      const cam = G.cam, W = G.W;
+      if (L.obj) L.ledK += ((L.obj.n / L.obj.max) - L.ledK) * .05;
+      for (const b of BANCOS) if (b.x + 70 > cam && b.x - 4 < cam + W) banco(c, b);
+      for (const px of PAINEIS) if (px + 100 > cam && px < cam + W) painel(c, px, G);
       // leão correndo
-      const ln = L.lion; if (G.hero.x < 110 * 16) SL.Bosses.drawLion(c, ln.x, 160 - 40, ln.t, false, .7);
+      lionInit(G); const ln = L.lion; if (G.hero.x < CHASE_END) SL.Bosses.drawLion(c, ln.x, ln.y == null ? 120 : ln.y, ln.t, false, 1, 1);
     };
     return L;
   };
@@ -1117,6 +1179,26 @@
     b.hole(104, 112).g(98, 104);
     b.v(102, 6, true).coins(105, 5, 5);
     b.cp(100);
+    // plataformas sobre o buraco largo (104–117): caem 3 s depois de pisadas (tremem no último segundo)
+    const quedas = [106, 110, 114].map(tx => ({
+      x0: tx * 16, y0: 144, x: tx * 16, y: 144, w: 32, h: 8, t: -1, vy: 0,
+      update(G) {
+        if (this.t < 0) return;
+        this.t++;
+        if (this.t === 180) G.sfx('break');
+        if (this.t > 180 && this.y < 260) { this.vy = Math.min(this.vy + .35, 6); this.y += this.vy; }
+      },
+      onTouch(G) { if (this.t < 0) { this.t = 0; G.sfx('block'); } },
+      draw(c, G) {
+        if (this.y > 240) return;
+        const sh = this.t > 120 && this.t <= 180 ? ((this.t >> 1) % 2 ? 1 : -1) : 0, x = this.x + sh, y = Math.round(this.y);
+        D.r(c, x, y, 32, 8, '#1a1020'); D.r(c, x + 1, y + 1, 30, 6, '#c8a06a');
+        for (let i = 4; i < 32; i += 6) D.r(c, x + i, y + 1, 1, 6, '#8a6a3a');
+        if (this.t > 120) { D.r(c, x + 9, y + 2, 3, 1, '#5a3a24'); D.r(c, x + 21, y + 4, 4, 1, '#5a3a24'); }
+      }
+    }));
+    quedas.forEach(m => b.m(m));
+    L.onRespawn = () => { for (const m of quedas) { m.x = m.x0; m.y = m.y0; m.t = -1; m.vy = 0; } };
     b.arena(['trator']);
     L.obj = null;
     L.update = (G) => {
