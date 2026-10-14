@@ -1,18 +1,96 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nova Aplicação</title>
-    <meta name="description" content="Uma página web moderna e minimalista." />
-    <meta property="og:title" content="Nova Aplicação" />
-    <meta property="og:description" content="Uma página web moderna e minimalista." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d1030">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Super Lula — Reconstrução 2027</title>
+<link rel="preload" href="fonts/PressStart2P-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="fonts/VT323-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="stage" id="stage">
+  <canvas id="cv" width="336" height="192"></canvas>
+  <div id="tl"></div>
 
+  <div id="hud" class="px" hidden>
+    <div id="hLives"></div><div id="hFase"></div><div id="hObj"></div><div id="hCoins"><i class="coin"></i><span></span></div>
+  </div>
+
+  <!-- tela de abertura -->
+  <div id="title" class="ov center px" hidden>
+    <div class="logo"><div class="s" id="logoS"></div><div class="f" id="logoF"></div><div class="w" id="logoSub"></div></div>
+    <div class="press" id="titlePress"></div>
+    <div class="disc"><span id="titleDisc"></span><span class="seal2" id="titleSeal"></span></div>
+  </div>
+
+  <div id="mapbar" class="px" hidden>
+    <div><div class="t1" id="mb1"></div><div class="t2" id="mb2"></div></div>
+    <div class="t3"><div id="mb3"></div><div id="mb4"></div></div>
+  </div>
+
+  <div id="dlg" class="dlg px" hidden></div>
+
+  <div id="card" class="ov card px" hidden><div class="roll" id="roll"></div></div>
+
+  <div id="pause" class="ov center px" hidden>
+    <div class="ptitle" id="pTitle"></div>
+    <div class="pline" id="pLine"></div>
+    <div class="pbtns"><button id="pCont" class="btn"></button><button id="pMap" class="btn"></button><button id="pSom" class="btn"></button></div>
+  </div>
+
+  <div id="banner" class="px" hidden></div>
+  <div id="cutcap" class="px" hidden></div>
+  <button id="skip" class="skip px" hidden></button>
+  <div id="toast" class="px" hidden></div>
+  <div id="big" class="px" hidden></div>
+
+  <!-- urna -->
+  <div id="urna" class="ov" hidden>
+    <div class="urna">
+      <div class="u-bezel"><div class="u-scr px" id="uScr"></div></div>
+      <div class="u-side">
+        <div class="u-label px">URNA</div>
+        <div class="u-pad">
+          <div class="u-keys px"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span class="z">0</span></div>
+          <div class="u-acts px"><span class="br">BRANCO</span><span class="co">CORRIGE</span><span class="cf" id="uCf">CONFIRMA</span></div>
+        </div>
+      </div>
+      <div class="u-vents"></div>
+    </div>
+  </div>
+
+  <div id="debug" class="px" hidden></div>
+</div>
+
+<div class="legend px" id="legend"></div>
+
+<!-- controles de toque -->
+<div class="touch" id="touch">
+  <div class="dpad" id="dpad"><span data-d="L">◄</span><span data-d="R">►</span></div>
+  <div class="btns"><div class="tbtn b" id="tB">B</div><div class="tbtn a" id="tA">A</div></div>
+</div>
+<div class="tpause px" id="tP">II</div>
+
+<!-- gire o celular -->
+<div id="rotate" hidden>
+  <div class="rlogo px"><div class="s" id="rLogoS"></div><div class="f" id="rLogo"></div><div class="w" id="rLogoW"></div></div>
+  <div class="phone"></div>
+  <h2 id="rT"></h2>
+  <p id="rP"></p>
+  <small id="rS"></small>
+  <div class="seal px" id="rSeal"></div>
+</div>
+
+<script src="js/content.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/bosses.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
