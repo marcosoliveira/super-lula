@@ -719,17 +719,41 @@
   };
 
   /* ---------- Fase 12 · O Leão Faminto (A-09) ---------- */
-  function drawLion(c, x, y, t, sleep, sc) {
-    c.save(); c.translate(x, y); if (sc && sc !== 1) c.scale(sc, sc);
-    // corpo cinza, juba sépia, boca grande (sem logo nem cores oficiais)
+  // paleta do leão (laranja de desenho, sem logo)
+  const LION_PAL = { body: '#f0a050', back: '#d07a30', face: '#f4a858', mane: '#a0521e', tuft: '#7a3a14' };
+  // Desenhado virado para a direita (64 x 40, pés em y+40); face < 0 espelha para a esquerda.
+  function drawLion(c, x, y, t, sleep, sc, face) {
+    c.save(); c.translate(Math.round(x), Math.round(y)); if (sc && sc !== 1) c.scale(sc, sc);
+    if (face < 0) { c.translate(64, 0); c.scale(-1, 1); }
+    const P = LION_PAL, R = (a, b, w, h, col) => D.r(c, a, b, w, h, col);
     const step = sleep ? 0 : Math.floor(t / 6) % 2;
-    D.box(c, 14, 14, 38, 20, '#9aa0aa');
-    D.r(c, 18, 32, 6, 8 - step * 2, K); D.r(c, 28, 32, 6, 6 + step * 2, K); D.r(c, 38, 32, 6, 8 - step * 2, K); D.r(c, 46, 32, 6, 6 + step * 2, K);
-    D.r(c, 50, 12, 8, 3, '#9aa0aa'); D.r(c, 56, 8, 4, 6, '#7a5a3a');
-    c.fillStyle = K; c.beginPath(); c.arc(14, 16, 17, 0, 7); c.fill(); c.fillStyle = '#9a7a4a'; c.beginPath(); c.arc(14, 16, 16, 0, 7); c.fill();
-    D.box(c, 2, 6, 22, 20, '#b4bac4');
-    if (sleep) { D.r(c, 6, 13, 5, 1, K); D.r(c, 15, 13, 5, 1, K); D.r(c, 9, 20, 8, 2, K); }
-    else { D.r(c, 6, 11, 4, 4, K); D.r(c, 15, 11, 4, 4, K); D.r(c, 7, 12, 1, 1, '#fff'); D.r(c, 16, 12, 1, 1, '#fff'); D.r(c, 4, 18, 18, 6, K); D.r(c, 5, 19, 16, 4, '#d8322c'); D.r(c, 6, 18, 2, 2, '#fff'); D.r(c, 18, 18, 2, 2, '#fff'); }
+    // rabo caindo com tufo
+    R(6, 15, 5, 2, K); R(4, 16, 3, 9, K); R(5, 16, 1, 9, P.body);
+    R(0, 24, 7, 7, K); R(1, 25, 5, 5, P.tuft);
+    // pernas (as de trás mais escuras)
+    const legs = sleep ? [[18, P.back, 0], [44, P.back, 0], [11, P.body, 0], [37, P.body, 0]]
+      : [[18, P.back, step * 2], [44, P.back, (1 - step) * 2], [11, P.body, (1 - step) * 2], [37, P.body, step * 2]];
+    for (const [lx, col, lift] of legs) D.box(c, lx, 29, 7, sleep ? 5 : 11 - lift, col);
+    // corpo com quina arredondada
+    D.box(c, 10, 13, 42, 18, P.body);
+    R(10, 13, 2, 1, K); R(10, 14, 1, 1, K); R(11, 14, 1, 1, K);
+    // juba em blocos
+    R(37, -3, 24, 29, K); R(39, -5, 20, 33, K); R(35, -1, 28, 25, K);
+    R(38, -2, 22, 27, P.mane); R(40, -4, 18, 31, P.mane); R(36, 0, 26, 23, P.mane);
+    // rosto quadrado com orelhinhas
+    R(41, -1, 4, 4, K); R(55, -1, 4, 4, K); R(42, 0, 2, 2, P.face); R(56, 0, 2, 2, P.face);
+    D.box(c, 41, 1, 18, 17, P.face);
+    if (sleep) {
+      R(44, 7, 4, 1, K); R(52, 7, 4, 1, K);
+      R(49, 11, 2, 1, K); R(48, 14, 4, 1, K);
+    } else {
+      R(45, 5, 2, 4, K); R(53, 5, 2, 4, K);
+      R(48, 10, 4, 2, K); R(49, 12, 2, 1, K);
+      // mordida no contracheque
+      const mo = Math.floor(t / 8) % 2;
+      R(46, 14, 8, 1 + mo, K);
+      D.box(c, 51, 14 + mo, 6, 7, '#f4f2ec'); R(52, 16 + mo, 3, 1, '#8a8f99');
+    }
     c.restore();
   }
   F.leao = (G, ar) => {
@@ -743,29 +767,53 @@
       if (ch !== 'K') return;
       G.setTile(tx, ty, 'U'); G.sfx('coin');
       for (let i = 0; i < 6; i++) coins.push({ x: tx * 16 + 4 + i * 2, y: ty * 16 + 16, vy: -1 - Math.random(), vx: (Math.random() - .5) * 2.4, on: false });
-      b.eatX = tx * 16; b.eat = 160; b.hit(G);
+      b.eatX = tx * 16; b.eat = 160; b.roar = 0; b.warn = 0; b.lunge = 0; b.hit(G);
+    };
+    // o leão aspira as moedas até a boca (acelerando) e engole quando chegam
+    const pullCoins = () => {
+      const mx = b.x + (b.face > 0 ? 54 : 6), my = FLOOR - 26;
+      for (let i = coins.length - 1; i >= 0; i--) {
+        const cn = coins[i], dx = mx - cn.x, dy = my - cn.y, d = Math.hypot(dx, dy);
+        cn.ps = (cn.ps || .5) + .12;
+        if (d < 6) { coins.splice(i, 1); continue; }
+        const st = Math.min(d, cn.ps); cn.x += dx / d * st; cn.y += dy / d * st; cn.on = false;
+      }
     };
     const b = base(G, ar, {
-      name: C.fases[12].chefeNome[0], hp: 4, invT: 10, dieT: 220, x: ar.x1 - 90, vx: -1, eat: 0, lunge: 0,
+      name: C.fases[12].chefeNome[0], hp: 4, zz: 0, invT: 10, dieT: 220, x: ar.x1 - 90, vx: -1, eat: 0, lunge: 0, face: -1,
       step(G) {
-        const h = G.hero;
-        for (const c of coins) if (!c.on) { c.vy += .25; c.x += c.vx; c.y += c.vy; if (c.y >= FLOOR - 12) { c.y = FLOOR - 12; c.on = true; } }
-        if (b.eat > 0) { b.eat--; const tx = b.eatX - 10; b.x += Math.sign(tx - b.x) * Math.min(2, Math.abs(tx - b.x)); if (Math.abs(tx - b.x) < 3) coins.length = Math.max(0, coins.length - (b.t % 20 === 0 ? 1 : 0)); }
+        const h = G.hero, ox = b.x;
+        const arrived = b.eat > 0 && Math.abs((b.eatX - 10) - b.x) < 3;
+        for (const c of coins) if (!c.on && !c.ps) { c.vy += .25; c.x += c.vx; c.y += c.vy; if (c.y >= FLOOR - 12) { c.y = FLOOR - 12; c.on = true; } }
+        if (b.eat > 0) { b.eat--; const tx = b.eatX - 10; b.x += Math.sign(tx - b.x) * Math.min(2, Math.abs(tx - b.x)); if (arrived) { const cx = coins.reduce((s, c) => s + c.x, 0) / (coins.length || 1); if (coins.length) b.face = cx > b.x + 32 ? 1 : -1; pullCoins(); } }
         else if (b.lunge > 0) { b.lunge--; b.x += b.vx * 3.2; if (b.x < ar.x0 || b.x > ar.x1 - 56) { b.vx = -b.vx; b.lunge = 0; } }
         else {
           b.x += b.vx; if (b.x < ar.x0 + 10 || b.x > ar.x1 - 60) b.vx = -b.vx;
           if (b.t % 150 === 70) { b.vx = h.x < b.x ? -1 : 1; b.lunge = 40; }
-          if (b.t % 220 === 140) { G.sfx('roar'); b.roar = 50; }
+          // aviso de rugido: puxa o ar e treme por meio segundo, depois ruge e empurra
+          if (b.t % 220 === 140) { G.sfx('roarIn'); b.warn = 30; }
         }
+        if (b.warn > 0 && --b.warn === 0) { G.sfx('roar'); b.roar = 50; G.shake(6); }
         if (b.roar > 0) { b.roar--; h.push = (h.x < b.x ? -1.1 : 1.1); }
-        hurtIf(G, { x: b.x + 4, y: FLOOR - 36, w: 50, h: 34 });
+        if (!arrived) { if (b.x - ox > .05) b.face = 1; else if (b.x - ox < -.05) b.face = -1; }
+        // enquanto corre atrás das moedas e come, o leão não machuca
+        if (b.eat <= 0) hurtIf(G, { x: b.x + 6, y: FLOOR - 36, w: 54, h: 34 });
+      },
+      // derrotado: antes de dormir, puxa para si todas as moedas que ainda estão na arena (inclusive as que estão caindo)
+      die(G) {
+        if (coins.length) {
+          if (!b.pulling) { b.pulling = true; const cx = coins.reduce((s, c) => s + c.x, 0) / coins.length; b.face = cx > b.x + 32 ? 1 : -1; }
+          pullCoins();
+          if (b.dying > b.dieT - 40) b.dying = b.dieT - 40;
+        } else b.zz++;
       },
       draw(c, G) {
         for (const cn of coins) D.coin(c, cn.x, cn.y, G.t);
-        const sleep = b.dying > 30;
-        drawLion(c, b.x, FLOOR - 40 + (sleep ? 6 : 0), b.t, sleep, 1);
-        if (b.roar > 0) for (let i = 0; i < 3; i++) { c.strokeStyle = 'rgba(255,255,255,.6)'; c.beginPath(); c.arc(b.x + 4, FLOOR - 22, 10 + ((b.roar * 2 + i * 12) % 36), 2.2, 4); c.stroke(); }
-        if (sleep) D.text(c, C.fases[12].textoMotor.zzz.slice(0, 1 + (Math.floor(b.dying / 20) % 3)), b.x + 10, FLOOR - 52 - (b.dying % 20) / 4, '#ffffff', 6, 'left');
+        const sleep = b.dying > 0 && !coins.length && b.zz > 20;
+        const tremor = b.warn > 0 ? ((b.warn >> 1) % 2 ? 1 : -1) : 0;
+        drawLion(c, b.x + tremor, FLOOR - 40 + (sleep ? 6 : 0), b.t, sleep, 1, b.face);
+        if (b.roar > 0) for (let i = 0; i < 3; i++) { c.strokeStyle = 'rgba(255,255,255,.6)'; c.beginPath(); const r = 10 + ((b.roar * 2 + i * 12) % 36); if (b.face > 0) c.arc(b.x + 62, FLOOR - 20, r, -.86, .94); else c.arc(b.x + 2, FLOOR - 20, r, 2.2, 4); c.stroke(); }
+        if (sleep) D.text(c, C.fases[12].textoMotor.zzz.slice(0, 1 + (Math.floor(b.zz / 20) % 3)), b.x + (b.face > 0 ? 50 : 10), FLOOR - 52 - (b.zz % 20) / 4, '#ffffff', 6, 'left');
       }
     });
     return b;
@@ -784,9 +832,11 @@
       step(G) {
         const h = G.hero; b.form = Math.min(2, Math.floor((9 - b.hp) / 3));
         b.x = tx + Math.sin(b.t * .02) * 10;
-        b.arm = (b.t % 160);
+        // braço: estende a cada 260 quadros (~4,3 s; antes 160) e alcança no máximo 90 px (antes 150)
+        const ARM_CICLO = 260, ARM_ALCANCE = 90;
+        b.arm = (b.t % ARM_CICLO);
         const sweep = b.arm > 60 && b.arm < 110;
-        const reach = sweep ? Math.sin((b.arm - 60) / 50 * Math.PI) * 150 : 0;
+        const reach = sweep ? Math.sin((b.arm - 60) / 50 * Math.PI) * ARM_ALCANCE : 0;
         b.reach = reach;
         if (b.form === 0) {
           // tesourão: lâmina rente ao chão — pular a lâmina e atirar na cabine

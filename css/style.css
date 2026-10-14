@@ -154,6 +154,7 @@ html.full .urna{width:min(calc(88*var(--u)),calc(100% - 2*(var(--t-edge-r) + var
 .u-bezel{display:flex;min-height:0;padding:calc(1.1*var(--u));background:#2b2b2e;border-radius:calc(.6*var(--u));position:relative}
 .u-scr{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:calc(1*var(--u));background:linear-gradient(#1f4a2a,#163a20);color:#d8ffd8;
   padding:calc(1.4*var(--u)) calc(2*var(--u));text-transform:none;letter-spacing:0;position:relative}
+.u-scr h2{margin:0;font-family:var(--pixel);text-transform:uppercase;letter-spacing:.02em;color:#ffd21f;line-height:1.35;text-wrap:balance;font-size:clamp(8px,calc(1.7*var(--u)),16px);font-size:round(clamp(8px,calc(1.7*var(--u)),16px),1px)}
 .u-scr p{font-family:var(--read);font-size:clamp(14px,calc(2.9*var(--u)),28px);font-size:round(clamp(14px,calc(2.9*var(--u)),28px),1px);line-height:1.05}
 .u-scr .u-top{font-family:var(--pixel);font-size:clamp(8px,calc(1*var(--u)),9px);font-size:round(clamp(8px,calc(1*var(--u)),9px),1px);text-transform:uppercase;color:#9fe0a8;align-self:center}
 .u-scr .u-hint{margin-top:auto;font-family:var(--pixel);text-transform:uppercase;font-size:clamp(8px,calc(1.2*var(--u)),11px);font-size:round(clamp(8px,calc(1.2*var(--u)),11px),1px);color:#ffd21f;animation:blink 1s steps(2,end) infinite;text-align:right}

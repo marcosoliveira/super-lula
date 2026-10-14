@@ -94,7 +94,10 @@ SL.C = {
 
   /* ---------- Urna (seção 6.10) ---------- */
   urna: {
-    texto: "Reconstruiu o que estava quebrado. Desemprego no menor nível da série. Fora do Mapa da Fome. Agora tem um mapa inteiro pela frente. Em 25 de outubro, CONFIRMA.",
+    titulo: "O fim desse jogo é você quem escolhe",
+    texto: "Neste segundo turno, não está em jogo só um governo. Está em jogo a democracia, que não se queima numa praça. Está em jogo a Constituição, que não se rasga para caber na vontade de uma família. E está em jogo a garantia de que, daqui a 4 anos, você vai poder voltar aqui e votar de novo. Um presidente com maioria na Câmara e no Senado, e sem nenhum freio institucional, pode mudar as regras do jogo no meio da partida. É isso que Flávio Bolsonaro teria nas mãos: filho e articulador de quem tentou dar um golpe, e dono de uma ficha corrida de escândalos, chegaria ao poder sem ninguém para segurá-lo. Ninguém precisa concordar com tudo para saber qual caminho é pior. Às vezes, votar é escolher o caminho menos pior. E esse caminho não passa por Flávio. No segundo turno, no próximo dia 25, escolha quem respeita a democracia e a Constituição. Diga não a Flávio Bolsonaro. Diga sim ao Brasil.",
+    // versão curta usada na imagem de compartilhar (a mensagem completa não cabe no cartão)
+    compartilhar: "Reconstruiu o que estava quebrado. Desemprego no menor nível da série. Fora do Mapa da Fome. Agora tem um mapa inteiro pela frente. Em 25 de outubro, CONFIRMA.",
     confirma: "CONFIRMA",
     equipe: "Equipe: (a preencher)"
   },
@@ -249,7 +252,7 @@ SL.C = {
       placar: ["IR zero até R$ 5 mil", "15 milhões pagam menos ou nada"],
       fontes: ["lei15270", "camaraIR", "senadoIR", "dieese", "agenciaGov", "jovemPan", "sbtEmenda"],
       revisaoJuridica: true, revisaoNota: "frase final",
-      textoMotor: { placa: "NÃO PERTURBE", isento: "ISENTO", zzz: "ZZZ" }
+      textoMotor: { placa: "NÃO PERTURBE", isento: "ISENTO", zzz: "ZZZ", bancos: ["BANCO ALTO", "CAPITAL+", "COFRE S.A.", "RENDA MAX", "BANCO NOBRE", "LUCRO & CIA"], painel: { titulo: "IMPOSTO DE RENDA", pobre: "QUEM GANHA 5 MIL", rico: "QUEM GANHA MILHÕES" } }
     },
     { // 13
       n: 13, nome: "O Trator do Atraso", ano: "2027", ato: 2,
@@ -278,7 +281,7 @@ SL.C = {
     ["MINA NO CERRADO", "A DRAGA"],
     ["NO CAIS"],
     ["NO ALTO DO MORRO"],
-    ["DIA DE PAGAMENTO", "NA COBERTURA"],
+    ["DIA DE PAGAMENTO", "ENQUANTO ISSO, OS RICOS..."],
     ["PRAÇA DOS TRÊS PODERES", "O TRATOR"]
   ],
 
