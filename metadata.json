@@ -1,0 +1,6 @@
+{
+  "name": "Nova Aplicação",
+  "description": "Uma página web moderna e minimalista.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
