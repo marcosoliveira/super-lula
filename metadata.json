@@ -1,0 +1,6 @@
+{
+  "name": "Super Lula — Reconstrução 2027",
+  "description": "Jogo arcade retrô de plataforma e ação em pixel art.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

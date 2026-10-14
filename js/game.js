@@ -134,7 +134,7 @@
     $('logoSub').textContent = C.abertura.subtitulo; $('rLogoW').textContent = C.abertura.subtitulo;
     $('titlePress').textContent = G.tk(C.abertura.aperte);
     $('titleDisc').textContent = C.abertura.rodape;
-    $('titleSeal').textContent = C.selo; $('rSeal').textContent = C.selo;
+    if($('titleSeal'))$('titleSeal').remove(); if($('rSeal'))$('rSeal').remove();
     $('rT').textContent = C.rotate.titulo; $('rP').textContent = C.rotate.texto; $('rS').textContent = C.rotate.rodape;
     $('legend').innerHTML = esc(C.legenda).replace(/(Setas|Z|X|Esc|M)(?= )/g, '<b>$1</b>');
     $('skip').textContent = C.pular;
@@ -541,6 +541,9 @@
     const x = L.cpX != null ? L.cpX : L.start.x;
     Object.assign(h, newHero(x, 0)); h.y = groundY(x) - h.h; h.inv = 60;
     L.hazards.length = 0; L.shots.length = 0; L.pull = 0;
+    L.crumble = [];
+    if (L.bridges) for (const b of L.bridges) G.setTile(b.x, b.y, '=');
+    if (L.scissors) for (const s of L.scissors) if (s[0] * 16 >= x - 80) s.done = false;
     G.cam = clampCam(h.x - G.W * .4);
     L.onRespawn && L.onRespawn(G);
     G.setState('play');
@@ -609,6 +612,8 @@
     L.hazards = []; L.shots = []; L.fx = []; L.bumps = []; L.cps = L.cps || [];
     L.bossIdx = 0; L.boss = null; L.boneLost = false;
     L.drawTile0 = L.drawTile; L.onBump0 = L.onBump;
+    L.bridges = [];
+    if (L.g) for (let y = 0; y < L.g.length; y++) if (L.g[y]) for (let x = 0; x < L.g[y].length; x++) if (L.g[y][x] === '=') L.bridges.push({ x, y });
     G.L = L; hudKey = ''; hudDirty = true;
     G.hero = newHero(L.start.x, 0); G.hero.y = groundY(L.start.x) - 18;
     G.cam = clampCam(G.hero.x - G.W * .4);
@@ -819,9 +824,11 @@
       y = wrap(C.urna.texto, 900, 64, y + 40, '60px VT323, monospace', '#fff8e7');
     }
     // selo de IA
-    x.font = font(22); const sw = x.measureText(C.selo).width + 40;
-    x.fillStyle = '#8a8f99'; x.fillRect(540 - sw / 2 - 4, 1770, sw + 8, 76); x.fillStyle = '#fff'; x.fillRect(540 - sw / 2, 1774, sw, 68);
-    x.fillStyle = '#1a1020'; x.fillText(C.selo, 540, 1797);
+    if (C.selo) {
+      x.font = font(22); const sw = x.measureText(C.selo).width + 40;
+      x.fillStyle = '#8a8f99'; x.fillRect(540 - sw / 2 - 4, 1770, sw + 8, 76); x.fillStyle = '#fff'; x.fillRect(540 - sw / 2, 1774, sw, 68);
+      x.fillStyle = '#1a1020'; x.fillText(C.selo, 540, 1797);
+    }
     c.toBlob(async blob => {
       if (!blob) return;
       const file = new File([blob], 'super-lula.png', { type: 'image/png' });
@@ -836,7 +843,7 @@
   G.finalCard = function () {
     $('roll').innerHTML = `<canvas id="finalPrev" width="432" height="768" style="width:calc(18*var(--u));height:calc(32*var(--u));image-rendering:auto;border:calc(.3*var(--u)) solid #fff"></canvas>
       <div class="row" style="display:flex;gap:calc(2*var(--u))"><button class="btn alt" id="fShare">${esc(C.placarAto1.compartilhar)} (${G.touch ? 'B' : 'X'})</button><button class="btn" id="fMap">MAPA (${G.touch ? 'A' : 'Z'})</button></div>
-      <div class="go-hint">${esc(C.selo)}</div>`;
+      `;
     const fp = $('finalPrev'); fp.width = 432; fp.height = 768;
     const pc = fp.getContext('2d'); pc.scale(4, 4); pc.imageSmoothingEnabled = false;
     pc.fillStyle = '#0b0f2e'; pc.fillRect(0, 0, 108, 192); pc.fillStyle = '#9ccc3c'; pc.fillRect(0, 160, 108, 4); pc.fillStyle = '#c2703a'; pc.fillRect(0, 164, 108, 28);

@@ -7,8 +7,8 @@
 window.SL = window.SL || {};
 
 SL.C = {
-  selo: "Conteúdo produzido com IA",
-  seloLongo: "Conteúdo produzido com inteligência artificial",
+  selo: "",
+  seloLongo: "",
   disclaimer: "Paródia baseada em fatos reais. Fontes checadas e exibidas após cada fase.",
 
   rotate: {

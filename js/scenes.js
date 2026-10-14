@@ -636,7 +636,7 @@
     let h = '<div class="crawl" id="crawl"><div class="cr-big">SUPER LULA</div><div class="cr-big">' + e(C.abertura.subtitulo) + '</div>';
     h += `<p>${e(C.urna.equipe)}</p><div class="cr-big">FONTES</div>`;
     for (const k of C.creditosFontes) { const f = C.fontes[k]; h += `<p class="sm">${f[1] ? `<a href="${e(f[1])}" target="_blank" rel="noopener" style="color:inherit">${e(f[0])}</a>` : e(f[0])}</p>`; }
-    h += `<div class="cr-big">${e(C.seloLongo)}</div></div>`;
+    h += "</div>";
     $('uScr').innerHTML = h;
   }
   S.urnaBg = function (c, G) { c.fillStyle = '#e6dbbd'; c.fillRect(0, 0, G.W, 192); };

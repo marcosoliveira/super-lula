@@ -335,13 +335,16 @@
   }
   SL.usTag = usTag;
   T.tag = (tx, ty, big) => tgt({
-    kind: 'tag', x: tx * 16 - (big ? 18 : 14), y: ty * 16, w: big ? 50 : 46, h: big ? 13 : 12, accept: ['ink', 'bandeirinha'], big, fallY: 0, vy: 0,
+    kind: 'tag', x: tx * 16 - (big ? 18 : 14), y: ty * 16 - 16, w: big ? 50 : 46, h: big ? 13 : 12, accept: ['ink', 'bandeirinha'], big, fallY: 0, vy: 0,
     hit(G) { this.done = true; G.sfx('target'); if (big) G.objInc(); else G.addVotes(5); if (!big) G.pop(this.x + 8, this.y - 6, '+5', '#ffd21f'); },
     update(G) { if (this.done && this.fallY < 200) { this.vy += .3; this.fallY += this.vy; } },
     draw(c, G) {
       const sw = this.done ? 0 : Math.sin(G.t * .05 + tx) * 2;
       const x = this.x + sw, y = this.y + this.fallY;
-      if (!this.done) D.r(c, x + this.w / 2, ty * 16 - 14, 1, 14, '#5a3a24');
+      if (!this.done) {
+        D.r(c, x + 8, 0, 1, y, '#5a3a24');
+        D.r(c, x + this.w - 9, 0, 1, y, '#5a3a24');
+      }
       usTag(c, x, y, this.w, this.h, 'VENDE-SE');
     }
   });
@@ -512,7 +515,7 @@
     b.goal(160);
     // cacos de vidro (inimigos que andam) — usamos o slide no chão como "caco"
     L.ents = L.ents.filter(e => !e.dead);
-    for (const x of [16, 40, 62, 108, 133, 154]) L.ents.push(mkE('caco', x * 16, 160));
+    for (const x of [16, 40, 62, 108, 134.5, 154]) L.ents.push(mkE('caco', x * 16, 160));
     // Praça dos Três Poderes depredada (depois do 8 de janeiro): vidros quebrados, fumaça, grades tombadas
     const broken = (c, x, y, w, h) => { D.r(c, x, y, w, h, '#2a2a3a'); c.fillStyle = '#9fd3f5'; c.beginPath(); c.moveTo(x, y); c.lineTo(x + w * .6, y); c.lineTo(x + w * .3, y + h * .5); c.lineTo(x + w * .5, y + h); c.lineTo(x, y + h); c.fill(); };
     const smoke = (c, x, y, t, k) => { for (let i = 0; i < 6; i++) { const yy = y - ((t * .3 + i * 14 + k * 7) % 80), r = 5 + ((t * .3 + i * 14) % 80) / 8; c.fillStyle = 'rgba(90,90,100,' + (.45 - ((t * .3 + i * 14) % 80) / 200) + ')'; c.beginPath(); c.arc(x + Math.sin(i + t * .02) * 6, yy, r, 0, 7); c.fill(); } };
@@ -646,11 +649,11 @@
     const muda = (tx) => L.items.push({ kind: 'muda', x: tx * 16 + 3, y: 160 - 14, w: 10, h: 14,
       onTouch(G, it) { it.dead = true; G.L.mudas = (G.L.mudas || 0) + 1; G.sfx('coin'); G.toast('MUDAS × ' + G.L.mudas, 80); },
       draw(c, G, it) { const b = Math.sin(G.t * .1) * 1; D.r(c, it.x + 2, it.y + 9, 6, 5, '#1a1020'); D.r(c, it.x + 3, it.y + 10, 4, 3, '#8a5a3a'); D.r(c, it.x + 4, it.y + 3 + b, 2, 7, '#2f8a3a'); D.r(c, it.x, it.y + 1 + b, 5, 4, '#5ac85a'); D.r(c, it.x + 5, it.y + b, 5, 4, '#3ec04a'); } });
-    [5, 20, 37].forEach(muda);
+    [5, 20, 34].forEach(muda);
     b.t(T.clearing(12, 7)).X(16, 4, 2, 6).coins(16, 3, 2);
     b.t(T.clearing(26, 7)).X(30, 4, 2, 6).coins(30, 3, 2);
     b.q(8, 6).q(9, 6, 'picanha');
-    b.hole(36, 40).t(T.clearing(42, 7)).X(46, 4, 1, 6);
+    b.hole(36, 39).t(T.clearing(42, 7)).X(46, 4, 1, 6);
     b.cp(52);
     // (2) estouro da boiada
     L.stampede = { x0: 56 * 16, x1: 92 * 16, t: 0 };
