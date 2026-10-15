@@ -104,26 +104,47 @@
   }
 
   /* ================= tela / redimensionamento ================= */
+  // tamanho real da área visível: mede a régua fixa #vp (imune ao zoom do Safari e a valores
+  // velhos de innerWidth/innerHeight durante a rotação dos iPhones)
+  function viewSize() {
+    const vp = $('vp'); let vw = vp ? vp.clientWidth : 0, vh = vp ? vp.clientHeight : 0;
+    if (!vw || !vh) { const de = document.documentElement; vw = de.clientWidth || innerWidth; vh = de.clientHeight || innerHeight; }
+    return [vw, vh];
+  }
   function resize() {
     const html = document.documentElement, st = $('stage');
     const full = G.touch;
     html.classList.toggle('full', full);
+    const [vw, vh] = viewSize();
     let w = 336;
     if (full) {
-      const vw = innerWidth, vh = innerHeight;
-      w = Math.max(336, Math.min(520, Math.floor(192 * vw / vh)));
+      if (scrollX || scrollY) scrollTo(0, 0);
+      w = Math.max(336, Math.min(600, Math.floor(192 * vw / vh)));
       const hh = Math.min(vh, vw * 192 / w), ww = hh * w / 192;
       st.style.width = ww + 'px'; st.style.height = hh + 'px'; st.style.setProperty('--u', (hh * 1.75 / 100) + 'px');
     } else { st.style.width = ''; st.style.height = ''; st.style.removeProperty('--u'); }
     if (cv.width !== w) { cv.width = w; cv.height = H; }
     G.W = w; ctx.imageSmoothingEnabled = false;
-    const portrait = innerHeight > innerWidth && (G.touch || innerWidth <= 900);
+    const portrait = vh > vw && (G.touch || vw <= 900);
     $('rotate').hidden = !portrait;
     if (portrait && G.state === 'play') pauseOpen();
   }
-  addEventListener('resize', resize); addEventListener('orientationchange', resize);
+  // o iOS dispara os eventos antes de terminar a rotação: mede de novo quando assentar
+  const resizeSoon = () => { resize(); [120, 350, 800].forEach(t => setTimeout(resize, t)); };
+  addEventListener('resize', resizeSoon); addEventListener('orientationchange', resizeSoon);
+  addEventListener('pageshow', resizeSoon);
   if (window.visualViewport) visualViewport.addEventListener('resize', resize);
-  document.addEventListener('fullscreenchange', resize);
+  try { new ResizeObserver(() => resize()).observe($('vp')); } catch (e) {}
+  document.addEventListener('fullscreenchange', resizeSoon); document.addEventListener('webkitfullscreenchange', resizeSoon);
+  // trava o zoom de pinça e de toque duplo (o iOS ignora user-scalable=no)
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
+  document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', e => {
+    const now = Date.now();
+    if (now - lastTouchEnd < 320 && !(e.target.closest && e.target.closest('a,button,select,.btn'))) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
 
   /* ================= textos estáticos ================= */
   function logoHTML(s) { return [...s].map(ch => ch === ' ' ? '<span class="sp"> </span>' : `<span>${esc(ch)}</span>`).join(''); }
