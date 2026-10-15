@@ -376,6 +376,45 @@
   };
 
   // pessoinha genérica 'lula' desenhada
+  /* Constituição de 1988 (capa real): faixa branca com o título, capa verde e, no canto de baixo,
+     o triângulo amarelo com o arco azul */
+  const CW = '#f4f2ec', CG = '#1f8a46', CY = '#f2d61f', CB = '#2a6fe0', CT = '#2a2a30';
+  // projétil: 8 x 10
+  D.constSmall = (c, x, y) => {
+    D.r(c, x, y, 8, 10, PAL.k);
+    D.r(c, x + 1, y + 1, 6, 3, CW); D.r(c, x + 2, y + 2, 4, 1, CT);
+    D.r(c, x + 1, y + 4, 6, 5, CG);
+    D.r(c, x + 5, y + 5, 2, 1, CY); D.r(c, x + 4, y + 6, 3, 1, CY); D.r(c, x + 3, y + 7, 4, 1, CY);
+    D.r(c, x + 2, y + 8, 3, 1, CY); D.r(c, x + 5, y + 8, 2, 1, CB);
+  };
+  // na mão do Lula: 6 x 8
+  D.constTiny = (c, x, y) => {
+    D.r(c, x, y, 6, 8, PAL.k);
+    D.r(c, x + 1, y + 1, 4, 2, CW); D.r(c, x + 1, y + 2, 3, 1, CT);
+    D.r(c, x + 1, y + 3, 4, 4, CG);
+    D.r(c, x + 3, y + 5, 2, 1, CY); D.r(c, x + 2, y + 6, 2, 1, CY); D.r(c, x + 4, y + 6, 1, 1, CB);
+  };
+  // tamanho livre (Constituição gigante da arena e da cutscene)
+  D.constBook = (c, x, y, w, h) => {
+    D.r(c, x, y, w, h, PAL.k);
+    const ix = x + 1, iy = y + 1, iw = w - 2, ih = h - 2, bh = Math.round(ih * .32);
+    D.r(c, ix, iy, iw, bh, CW); D.r(c, ix, iy + bh, iw, ih - bh, CG);
+    // título: brasão, CONSTITUIÇÃO e subtítulo
+    const tw = Math.round(iw * .72), tx = ix + Math.round((iw - tw) / 2), th = Math.max(1, Math.round(ih / 30));
+    if (ih >= 50) { D.r(c, ix + iw / 2 - 2, iy + Math.round(bh * .18), 4, 3, '#8a8f99'); }
+    D.r(c, tx, iy + Math.round(bh * .5) - th, tw, th + 1, CT);
+    D.r(c, tx + 2, iy + Math.round(bh * .5) + th + 2, tw - 4, Math.max(1, th - 1), '#5a5f68');
+    if (ih >= 50) D.r(c, ix + iw / 2 - 3, iy + Math.round(bh * .5) + th * 2 + 5, 6, 1, '#5a5f68');
+    // triângulo amarelo e arco azul, recortados na capa
+    c.save(); c.beginPath(); c.rect(ix, iy + bh, iw, ih - bh); c.clip();
+    c.beginPath(); c.moveTo(ix + iw * .6, iy + ih * .56); c.lineTo(ix + iw * 1.02, iy + ih * .84); c.lineTo(ix + iw * 1.02, iy + ih); c.lineTo(ix + iw * .2, iy + ih); c.closePath();
+    c.fillStyle = CY; c.fill(); c.clip();
+    c.fillStyle = CB; c.beginPath(); c.ellipse(ix + iw * .82, iy + ih + ih * .02, iw * .3, ih * .1, 0, 0, 7); c.fill();
+    c.restore();
+    // lombada (leve sombra à esquerda)
+    D.r(c, ix, iy, Math.max(1, Math.round(iw * .07)), ih, 'rgba(0,0,0,.14)');
+  };
+
   SL.drawSprite = (c, sp, pose, face, x, y) => {
     const img = (sp[pose] || sp.stand)[face < 0 ? 1 : 0];
     c.drawImage(img, Math.round(x), Math.round(y));

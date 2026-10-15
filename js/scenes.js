@@ -536,14 +536,32 @@
       c.fillStyle = `rgba(150,155,165,${Math.max(0, .8 - t / 200)})`; for (let i = 0; i < 9; i++) { c.beginPath(); c.arc(40 + i * 34, 120 + Math.sin(i) * 10, 26, 0, 7); c.fill(); }
     }, 110),
     fr(13, 1, (c, t, G) => {
-      const W = G.W; sky(c, W, '#5a5f68', '#8a7f78');
+      const W = G.W; sky(c, W, t < 70 ? '#5a5f68' : '#6a2a2a', t < 70 ? '#8a7f78' : '#d8602c');
       ground(c, W, 150, '#dfe4ea', '#b8bec8');
-      D.box(c, 30, 70, 48, 80, '#efe3c0'); D.r(c, 34, 74, 5, 72, '#c9b98a'); D.r(c, 44, 90, 26, 3, '#5a3a24'); D.r(c, 44, 100, 26, 2, '#5a3a24');
-      const x = W - 20 - Math.min(110, t * .7);
-      D.box(c, x, 104, 64, 30, '#8a8f99'); D.box(c, x + 26, 80, 28, 26, '#8a8f99'); D.r(c, x + 29, 83, 22, 14, '#bfe6ff'); spr(c, SL.S.flavio, 'stand', -1, x + 33, 80);
-      D.r(c, x + 32, 96, 4, 4, '#ffd21f'); D.r(c, x + 6, 92, 6, 12, '#3a3d45'); D.r(c, x + 14, 90, 6, 14, '#3a3d45');
-      c.fillStyle = K; c.beginPath(); c.arc(x + 46, 138, 14, 0, 7); c.arc(x + 12, 142, 9, 0, 7); c.fill();
-    }, 150)
+      // Constituição gigante
+      D.constBook(c, 30, 70, 48, 80);
+      const fx = W - 90;
+      if (t < 70) {
+        // o Flavinho ergue a bússola do pai, que brilha cada vez mais
+        spr(c, SL.S.flavio, 'stand', -1, fx, 130);
+        const gl = Math.min(1, t / 60), by = 118 - Math.sin(t * .15) * 2;
+        c.fillStyle = `rgba(255,210,31,${.25 * gl})`; c.beginPath(); c.arc(fx + 6, by, 6 + gl * 22, 0, 7); c.fill();
+        D.r(c, fx + 3, by - 3, 7, 7, K); D.r(c, fx + 4, by - 2, 5, 5, (t >> 2) % 2 ? '#ffffff' : '#ffd21f');
+        // a névoa se junta em volta dele
+        c.fillStyle = 'rgba(150,155,165,.7)'; for (let i = 0; i < 7; i++) { const a = i / 7 * 6.28 + t * .05, rr = 60 - gl * 40; c.beginPath(); c.arc(fx + 7 + Math.cos(a) * rr, 136 + Math.sin(a) * rr * .5, 10, 0, 7); c.fill(); }
+        if (t > 58) { c.fillStyle = `rgba(255,255,255,${(t - 58) / 12})`; c.fillRect(0, 0, W, 192); }
+        return;
+      }
+      // vira o dragão e cospe fogo na Constituição
+      const k = t - 70, dx = fx - 40;
+      const m = SL.Bosses.drawDragon(c, dx, 150, t, { form: 2, headDown: .3, mouth: k > 20 });
+      if (k > 20) {
+        const len = Math.min(1, (k - 20) / 25);
+        for (let i = 0; i < 14; i++) { const q = i / 13 * len, px = m.mx - 14 - q * (m.mx - 14 - 80), py = m.my + 3 + q * (100 - m.my) + Math.sin(i + t * .4) * 3; D.r(c, px - 4, py - 4, 9, 9, i % 2 ? '#ff7a1a' : '#ffd21f'); D.r(c, px - 1, py - 1, 3, 3, '#fff6b0'); }
+        if (len >= 1) { const bn = Math.min(1, (k - 45) / 40); for (let i = 0; i < 1 + Math.floor(bn * 7); i++) { const hh = 8 + ((t >> 2) + i * 3) % 6 + bn * 8; D.r(c, 32 + i * 6, 70 - hh, 6, hh, '#ff7a1a'); D.r(c, 33 + i * 6, 73 - hh, 4, hh - 3, '#ffd21f'); } }
+      }
+      if (k < 12) { c.fillStyle = `rgba(255,255,255,${1 - k / 12})`; c.fillRect(0, 0, W, 192); }
+    }, 220)
   ];
 
   /* ================= condenação (abertura do Ato 2) ================= */

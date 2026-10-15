@@ -457,8 +457,16 @@
   }
   function shootInk() {
     const h = G.hero, L = G.L, kind = L.inkKind || 'ink';
-    if (L.shots.filter(s => s.kind === kind).length >= 2) return;
-    A.sfx('ink');
+    if (kind !== 'constituicao') {
+      if (L.shots.filter(s => s.kind === kind).length >= 2) return;
+      A.sfx('ink');
+    }
+    if (kind === 'constituicao') { // fase 13: cópias da Constituição (contam como 'ink' para alvos e inimigos)
+      if (L.shots.filter(s => s.kind === 'ink').length >= 2) return;
+      A.sfx('throw');
+      L.shots.push({ kind: 'ink', skin: 'constituicao', x: h.x + (h.face > 0 ? h.w : -8), y: h.y + 4, w: 8, h: 10, vx: 3.8 * h.face, vy: 0, g: 0, life: 75, col: '#efe3c0' });
+      return;
+    }
     if (kind === 'bandeirinha') L.shots.push({ kind, x: h.x + (h.face > 0 ? h.w : -9), y: h.y + 6, w: 9, h: 6, vx: 3.8 * h.face, vy: 0, g: 0, life: 75, col: '#17a34a', face: h.face });
     else L.shots.push({ kind: 'ink', x: h.x + (h.face > 0 ? h.w : -6), y: h.y + 8, w: 6, h: 4, vx: 4 * h.face, vy: 0, g: 0, life: 70, col: '#2a5adf' });
   }
@@ -570,6 +578,36 @@
     clearDpad(G.cam);
     G.setState('play');
   }
+  /* Arena do chefe do tamanho da tela: a arena original tem 320 px (20 blocos) e a parede da esquerda
+     ficava no começo dela. Em telas mais largas (celulares compridos) a câmera mostra mais à esquerda e a
+     parede ficava no meio da tela, invisível. Aqui a borda esquerda da arena acompanha a borda esquerda
+     da tela: o chão dessa faixa é completado (buracos e pontes viram chão), portões e portas saem, e
+     inimigos e plataformas soltas que sobraram ali são retirados. No desktop (336 px) nada muda. */
+  function arenaGround(grid, tx0, tx1) {
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = 0; ty < 10; ty++) { const ch = grid[ty] && grid[ty][tx]; if (ch === 'G' || ch === 'D') grid[ty][tx] = ' '; }
+      for (const ty of [10, 11]) { const ch = grid[ty] && grid[ty][tx]; if (grid[ty] && (!SOLID.has(ch) || ch === '=')) grid[ty][tx] = '#'; }
+    }
+  }
+  function fitArena(clean) {
+    const L = G.L, ar = L && L.arena; if (!ar) return;
+    if (ar.x0orig == null) ar.x0orig = ar.x0;
+    const want = Math.max(0, Math.min(ar.x0orig, L.w * 16 - G.W));
+    if (want < ar.x0orig && (ar.prep == null || want < ar.prep)) {
+      const tx0 = Math.floor(want / 16), tx1 = ar.x0orig / 16 - 1;
+      arenaGround(L.g, tx0, tx1); if (ar.snap) arenaGround(ar.snap.tiles, tx0, tx1);
+      ar.prep = want;
+    }
+    if (clean && want < ar.x0orig) {
+      const inside = (x, w) => x + (w || 0) > want && x < ar.x0orig;
+      for (const e of L.ents) if (!e.npc && !e.dead && (e.harm || e.kind === 'crusher') && !e.collect && inside(e.x, e.w)) e.dead = true; // só inimigos; itens e contracheques ficam
+      L.movers = L.movers.filter(m => !inside(m.x, m.w));
+      L.bridges = (L.bridges || []).filter(b => !inside(b.x * 16, 16));
+    }
+    ar.x0 = want;
+    if (ar.locked) L.wallL = want;
+  }
+  G.fitArena = fitArena;
   function respawnBoss() {
     const L = G.L, h = G.hero;
     // reseta a arena: tira tudo o que o chefe criou (inimigos, plataformas, itens, blocos) antes de recomeçar
@@ -999,7 +1037,7 @@
     if (L.goalX != null && h.x > L.goalX && !L.cleared) { L.onGoal ? L.onGoal(G) : levelClear(); }
     // arena do chefe
     if (L.arena && !L.arena.locked && h.x > L.arena.x0 + 24 && (!L.arenaNeed || L.arenaNeed(G))) {
-      L.arena.locked = true; L.wallL = L.arena.x0; L.wallR = L.arena.x1;
+      L.arena.locked = true; fitArena(true); L.wallL = L.arena.x0; L.wallR = L.arena.x1;
       L.hazards.length = 0;
       // retrato da arena antes da luta, para resetar tudo ao voltar no chefão
       L.arena.snap = { ents: L.ents.length, movers: L.movers.length, items: L.items.length, tiles: L.g.map(r => r.slice()) };
@@ -1019,7 +1057,7 @@
 
   function camera() {
     const L = G.L, h = G.hero;
-    if (L.arena && L.arena.locked) { G.cam += (L.arena.cam(G) - G.cam) * .15; return; }
+    if (L.arena && L.arena.locked) { fitArena(false); G.cam += (L.arena.cam(G) - G.cam) * .15; return; }
     if (L.autoscroll && L.autoscroll(G)) return;
     h.look = (h.look || 0) + ((h.face * 18) - (h.look || 0)) * .04;
     const target = clampCam(h.x + h.w / 2 - G.W * .42 + h.look);
@@ -1305,7 +1343,8 @@
 
   function drawShot(s) {
     const c = ctx;
-    if (s.kind === 'ink') { D.r(c, s.x, s.y, 6, 4, '#1a1020'); D.r(c, s.x + 1, s.y + 1, 4, 2, '#2a5adf'); D.r(c, s.x + (s.vx > 0 ? 3 : 1), s.y + 1, 1, 1, '#9fd3f5'); }
+    if (s.skin === 'constituicao') D.constSmall(c, s.x, s.y);
+    else if (s.kind === 'ink') { D.r(c, s.x, s.y, 6, 4, '#1a1020'); D.r(c, s.x + 1, s.y + 1, 4, 2, '#2a5adf'); D.r(c, s.x + (s.vx > 0 ? 3 : 1), s.y + 1, 1, 1, '#9fd3f5'); }
     else if (s.kind === 'card') { D.r(c, s.x, s.y, 8, 6, '#1a1020'); D.r(c, s.x + 1, s.y + 1, 6, 4, '#2449c9'); D.r(c, s.x + 2, s.y + 2, 4, 1, '#ffd21f'); }
     else if (s.kind === 'bandeirinha') { // bandeirinha do Brasil
       const fx = s.vx > 0 ? s.x : s.x + 1; D.r(c, s.vx > 0 ? s.x : s.x + 8, s.y, 1, 7, '#5a3a24');

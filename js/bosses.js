@@ -823,69 +823,155 @@
   SL.Bosses.bigScissor = bigScissor;
   SL.Bosses.smallScissor = smallScissor;
 
-  /* ---------- Fase 13 · Trator do Atraso (A-10) ---------- */
+  /* ---------- Fase 13 · Flavinho Dragão (A-10) ----------
+     Com a bússola do pai, o Flavinho vira um dragão com as cores dos EUA e quer queimar a Constituição.
+     Mesma estrutura do antigo trator: 9 acertos, 3 pontos fracos em sequência (3 cada).
+       forma 0: bússola no peito  · ataque: fogo rente ao chão (pular)
+       forma 1: joelho da frente  · ataque: pisada que manda uma onda pelo chão (pular)
+       forma 2: boca (cabeça baixa) · ataque: bolas de fogo que batem na Constituição e voltam
+     O Lula joga cópias da Constituição (tiro 'ink' com skin 'constituicao'). */
+  /* Desenho baseado na referência: corpo quadrado (metade de cima azul com estrelas, de baixo listrada),
+     4 pernas listradas com pés azuis, asa pequena nas costas, cauda listrada enrolada e a cabeça grande
+     do Flavinho direto no corpo. Virado para a esquerda (para o Lula). */
+  function dragonGeo(x, fy, k) {
+    const hx = x - 16, hy = fy - 74 + (k || 0) * 22;     // cabeça 42 x 30 (sprite em escala 3x)
+    return { hx, hy, mx: hx + 21, my: hy + 22 };          // centro da boca
+  }
+  function drawDragon(c, x, fy, t, o) {
+    o = o || {};
+    const B = '#26357a', R = '#c8262c', W_ = '#f4f2ec', Y = '#ffd21f';
+    const form = o.form || 0, r = o.reach || 0, vis = o.vis !== false;
+    const stripes = (sx, sy, w, h, first) => { for (let i = 0; i < h; i += 3) D.r(c, sx, sy + i, w, Math.min(3, h - i), ((i / 3) & 1) === (first ? 0 : 1) ? R : W_); };
+    // cauda listrada, enrolando para cima
+    const tail = [[72, -34], [78, -31], [84, -31], [89, -35], [92, -41], [93, -48], [91, -55], [87, -60]];
+    tail.forEach(([dx, dy], i) => { D.r(c, x + dx - 1, fy + dy - 1, 7, 7, K); });
+    tail.forEach(([dx, dy], i) => { D.r(c, x + dx, fy + dy, 5, 5, i % 2 ? W_ : R); });
+    // pernas (a da frente pode esticar para chutar na forma 1)
+    const leg = (lx, ly, len) => { D.r(c, lx - 1, ly, 8, len, K); stripes(lx, ly, 6, len - 5, true); D.r(c, lx - 1, fy - 5, 9, 5, K); D.r(c, lx, fy - 4, 7, 4, B); };
+    leg(x + 64, fy - 24, 24); leg(x + 50, fy - 24, 24); leg(x + 28, fy - 24, 24);
+    // pata da frente: levanta antes de pisar (forma 1)
+    const lift = Math.round(o.lift || 0);
+    if (!lift) leg(x + 14, fy - 24, 24);
+    else { D.r(c, x + 13, fy - 24, 8, 16 - lift, K); stripes(x + 14, fy - 24, 6, 15 - lift, true); D.r(c, x + 13, fy - 9 - lift, 9, 5, K); D.r(c, x + 14, fy - 8 - lift, 7, 4, B); }
+    // joelho da frente (ponto fraco da forma 1)
+    const jw = form === 1 && vis && (t >> 3) % 2;
+    D.box(c, x + 12, fy - 26, 12, 12, jw ? Y : R); D.r(c, x + 14, fy - 24, 8, 2, jw ? '#fff6b0' : W_);
+    // corpo: azul com estrelas em cima, listras embaixo
+    D.r(c, x + 7, fy - 47, 68, 27, K);
+    D.r(c, x + 8, fy - 46, 66, 12, B);
+    for (let i = 0; i < 14; i++) { const sx = x + 12 + ((i * 23) % 58), sy = fy - 44 + ((i * 7) % 9); D.r(c, sx, sy, 2, 2, W_); }
+    stripes(x + 8, fy - 34, 66, 13, true);
+    // asa de morcego nas costas: osso da frente, 2 dedos e borda de baixo bem recortada entre eles
+    const fl = Math.round(Math.sin(t * .12) * 3);
+    const P = (dx, dy) => [x + dx, fy + dy];
+    const S = P(30, -46), Wr = P(36, -78 + fl), F1 = P(44, -46), F2 = P(60, -50 + Math.round(fl / 2)), T = P(80, -66 + fl);
+    const LE = P(58, -86 + fl);                                        // curva do bordo de ataque (pulso → ponta)
+    const sc = (A, Bp) => [(A[0] + Bp[0]) / 2 + (Wr[0] - (A[0] + Bp[0]) / 2) * .5, (A[1] + Bp[1]) / 2 + (Wr[1] - (A[1] + Bp[1]) / 2) * .5]; // recorte puxado para o pulso
+    const panel = (A, Bp, col, lead) => { c.fillStyle = col; c.beginPath(); c.moveTo(Wr[0], Wr[1]); if (lead) c.quadraticCurveTo(LE[0], LE[1], A[0], A[1]); else c.lineTo(A[0], A[1]); const q = sc(A, Bp); c.quadraticCurveTo(q[0], q[1], Bp[0], Bp[1]); c.closePath(); c.fill(); };
+    panel(T, F2, R, true); panel(F2, F1, B, false); panel(F1, S, R, false);
+    // contorno e ossos
+    c.strokeStyle = K; c.lineWidth = 2; c.lineJoin = 'round'; c.beginPath();
+    c.moveTo(S[0], S[1]); c.lineTo(Wr[0], Wr[1]); c.quadraticCurveTo(LE[0], LE[1], T[0], T[1]);
+    let q = sc(T, F2); c.quadraticCurveTo(q[0], q[1], F2[0], F2[1]); q = sc(F2, F1); c.quadraticCurveTo(q[0], q[1], F1[0], F1[1]); q = sc(F1, S); c.quadraticCurveTo(q[0], q[1], S[0], S[1]);
+    c.moveTo(Wr[0], Wr[1]); c.lineTo(F1[0], F1[1]); c.moveTo(Wr[0], Wr[1]); c.lineTo(F2[0], F2[1]); c.stroke(); c.lineJoin = 'miter';
+    D.r(c, Wr[0] - 2, Wr[1] - 4, 3, 3, W_); D.r(c, T[0], T[1] - 1, 2, 2, W_); D.r(c, F2[0] - 1, F2[1], 2, 2, W_); D.r(c, F1[0] - 1, F1[1], 2, 2, W_);
+    D.r(c, x + 46, fy - 62 + fl, 1, 1, W_); D.r(c, x + 50, fy - 66 + fl, 1, 1, W_); D.r(c, x + 49, fy - 58, 1, 1, W_);
+    // bússola dourada do pai no peito (ponto fraco da forma 0)
+    const bw = form === 0 && vis && (t >> 2) % 2;
+    D.r(c, x + 12, fy - 42, 13, 13, K); D.r(c, x + 13, fy - 41, 11, 11, bw ? '#ffffff' : Y); D.r(c, x + 15, fy - 39, 7, 7, bw ? Y : '#c99a1a'); D.r(c, x + 16, fy - 36, 5, 1, '#5a5f68');
+    // cabeça grande do Flavinho direto no corpo (só a cabeça, escala 3x)
+    const g = dragonGeo(x, fy, o.headDown);
+    const fs = SL.S && SL.S.flavio && SL.S.flavio.stand[1];
+    if (fs) { c.save(); c.imageSmoothingEnabled = false; c.drawImage(fs, 0, 0, 14, 10, g.hx, g.hy, 42, 30); c.restore(); }
+    // boca: abre para cuspir fogo; moldura amarela piscando na forma 2
+    const open = o.mouth ? 4 : 0, mw = form === 2 && vis && (t >> 3) % 2;
+    if (open) { D.r(c, g.mx - 6, g.my - 2, 12, 3 + open, K); D.r(c, g.mx - 4, g.my, 8, open - 1, '#ff7a1a'); }
+    if (mw) { const fx0 = g.mx - 9, fy0 = g.my - 5, fw = 18, fh = 10 + open; D.r(c, fx0, fy0, fw, 1, Y); D.r(c, fx0, fy0 + fh, fw, 1, Y); D.r(c, fx0, fy0, 1, fh, Y); D.r(c, fx0 + fw - 1, fy0, 1, fh + 1, Y); }
+    // forma 0: jato de fogo da boca até o chão e tapete de fogo
+    if (form === 0 && r > 0) {
+      for (let i = 0; i < 9; i++) { const q = i / 8, px = g.mx - 8 - q * 14, py = g.my + 3 + q * (fy - g.my - 8), s = 4 + q * 4; D.r(c, px - s / 2, py - s / 2, s, s, i % 2 ? '#ff7a1a' : '#ffd21f'); }
+      for (let i = 0; i < r; i += 6) { const hh = 6 + ((i * 7 + t) % 5); D.r(c, x - 10 - i - 6, fy - hh, 7, hh, ((i / 6 + (t >> 2)) % 3) ? '#ff7a1a' : '#ffd21f'); D.r(c, x - 10 - i - 4, fy - hh + 3, 3, hh - 3, '#e8412c'); }
+    }
+    return { mx: g.mx, my: g.my };
+  }
+  // chamas no topo da Constituição gigante, conforme ela queima
+  function burnBook(c, bx, fy, burn, t) {
+    if (burn <= .02) return;
+    c.fillStyle = `rgba(58,36,20,${Math.min(.55, burn * .6)})`; c.fillRect(bx + 1, fy - 31, 22, 30);
+    const n = Math.ceil(burn * 4);
+    for (let i = 0; i < n; i++) { const fx = bx + 2 + i * 5.5, hh = 5 + ((t >> 2) + i * 3) % 5 + burn * 6; D.r(c, fx, fy - 32 - hh, 5, hh, '#ff7a1a'); D.r(c, fx + 1, fy - 32 - hh + 3, 3, hh - 3, '#ffd21f'); }
+  }
+
   F.trator = (G, ar) => {
-    const tx = ar.x1 - 96, ty = FLOOR - 48;
+    const tx = ar.x1 - 104, ty = FLOOR - 48;
     const L = G.L;
     const b = base(G, ar, {
-      name: C.fases[13].chefeNome[0], hp: 9, invT: 30, dieT: 220, form: 0, arm: 0, x: tx,
+      name: C.fases[13].chefeNome[0], hp: 9, invT: 30, dieT: 220, form: 0, arm: 0, x: tx, head: 0,
       step(G) {
         const h = G.hero; b.form = Math.min(2, Math.floor((9 - b.hp) / 3));
+        if (b.lastForm != null && b.form !== b.lastForm) { G.sfx('roar'); G.shake(10); }
+        b.lastForm = b.form;
         b.x = tx + Math.sin(b.t * .02) * 10;
-        // braço: estende a cada 260 quadros (~4,3 s; antes 160) e alcança no máximo 90 px (antes 150)
+        b.head += ((b.form === 2 ? 1 : 0) - b.head) * .05;
+        // ataque a cada 260 quadros (~4,3 s), alcance máximo de 90 px
         const ARM_CICLO = 260, ARM_ALCANCE = 90;
         b.arm = (b.t % ARM_CICLO);
         const sweep = b.arm > 60 && b.arm < 110;
         const reach = sweep ? Math.sin((b.arm - 60) / 50 * Math.PI) * ARM_ALCANCE : 0;
         b.reach = reach;
+        b.mouth = (b.form === 0 && b.arm > 40 && b.arm < 110) || (b.form === 2 && b.t % 70 > 4 && b.t % 70 < 26);
+        if (b.form === 0 && b.arm === 40) G.sfx('roarIn');
         if (b.form === 0) {
-          // tesourão: lâmina rente ao chão — pular a lâmina e atirar na cabine
+          // fogo rente ao chão: pular o fogo e jogar a Constituição na bússola do peito
           if (sweep) hurtIf(G, { x: b.x - reach, y: FLOOR - 10, w: reach, h: 10 });
-          if (G.shotIn({ x: b.x + 30, y: ty - 4, w: 26, h: 20 }, ['ink'])) hitT(G);
+          if (G.shotIn({ x: b.x + 8, y: FLOOR - 46, w: 20, h: 20 }, ['ink'])) hitT(G);
         } else if (b.form === 1) {
-          // draga: braço varre o chão — pular e atirar na junta
-          if (sweep) hurtIf(G, { x: b.x - reach, y: FLOOR - 14, w: reach, h: 14 });
-          if (G.shotIn({ x: b.x - 8, y: FLOOR - 30, w: 14, h: 16 }, ['ink'])) hitT(G);
+          // pisada: pular a onda e acertar o joelho
+          // levanta a pata (aviso) e pisa: a onda corre pelo chão até a Constituição
+          if (b.arm === 64) { G.sfx('stamp'); G.shake(8); const w = G.hz({ x: b.x + 2, y: FLOOR - 10, w: 12, h: 10, vx: -2.2, life: 260 }); w.update = (G, z) => { z.x += z.vx; if (z.x < ar.x0 + 26) z.dead = true; }; w.draw = (c, G, z) => { D.r(c, z.x, z.y + 4, 12, 6, '#f4f2ec'); D.r(c, z.x + 3, z.y, 6, 10, '#f4f2ec'); D.r(c, z.x + 4, z.y + 2, 4, 6, '#c8262c'); }; }
+          if (G.shotIn({ x: b.x + 10, y: FLOOR - 31, w: 16, h: 15 }, ['ink'])) hitT(G); // exige um pulinho, como antes
         } else {
-          // pincel verde e amarelo tenta riscar a Constituição: tinta bate no escudo e volta
-          if (b.t % 70 === 20) { const z = G.hz({ x: b.x - 10, y: FLOOR - 30, w: 8, h: 8, vx: -2.4, vy: -1.6, g: .06, life: 300 }); z.update = (G, z) => { z.vy += z.g; z.x += z.vx; z.y += z.vy; if (z.y > FLOOR - 8) { z.y = FLOOR - 8; z.vy = -1.5; } if (z.x < ar.x0 + 26) { z.vx = 2.4; z.vy = -2; z.harm = false; z.ric = true; G.sfx('block'); } if (z.ric && z.x > b.x) z.dead = true; }; z.draw = (c, G, z) => { D.r(c, z.x, z.y, 8, 8, K); D.r(c, z.x + 1, z.y + 1, 6, 6, (G.t >> 2) % 2 ? '#169c3c' : '#ffd21f'); }; }
-          if (G.shotIn({ x: b.x - 14, y: FLOOR - 36, w: 16, h: 18 }, ['ink'])) hitT(G);
+          // cabeça baixa cospe bolas de fogo: batem na Constituição e voltam
+          if (b.t % 70 === 20) { G.sfx('throw'); const g0 = dragonGeo(b.x, FLOOR, b.head), z = G.hz({ x: g0.mx - 12, y: g0.my - 4, w: 8, h: 8, vx: -2.4, vy: -1.6, g: .06, life: 300 }); z.update = (G, z) => { z.vy += z.g; z.x += z.vx; z.y += z.vy; if (z.y > FLOOR - 8) { z.y = FLOOR - 8; z.vy = -1.5; } if (z.x < ar.x0 + 26) { z.vx = 2.4; z.vy = -2; z.harm = false; z.ric = true; G.sfx('block'); } if (z.ric && z.x > b.x) z.dead = true; }; z.draw = (c, G, z) => { const f = (G.t >> 2) % 2; if (z.ric) { c.fillStyle = 'rgba(170,170,180,.8)'; c.beginPath(); c.arc(z.x + 4, z.y + 4, 3 + f, 0, 7); c.fill(); return; } D.r(c, z.x - 1, z.y - 1, 10, 10, '#e8412c'); D.r(c, z.x, z.y, 8, 8, f ? '#ff7a1a' : '#ffd21f'); D.r(c, z.x + 2, z.y + 2, 4, 4, '#fff6b0'); D.r(c, z.x + (z.vx < 0 ? 8 : -4), z.y + 2, 4, 4, '#ff7a1a'); }; }
+          { const g = dragonGeo(b.x, FLOOR, b.head); if (G.shotIn({ x: g.mx - 10, y: g.my - 9, w: 20, h: 18 }, ['ink'])) hitT(G); }
         }
-        hurtIf(G, { x: b.x + 4, y: ty + 4, w: 60, h: 44 });
+        hurtIf(G, { x: b.x + 8, y: FLOOR - 46, w: 64, h: 46 });
       },
-      die(G) { if (b.dying % 6 === 0) G.fx({ kind: 'part', x: b.x + 30, y: ty + 10, vx: (Math.random() - .5) * 5, vy: -2 - Math.random() * 3, col: '#8a8f99', sz: 3, life: 60 }); },
+      die(G) { if (b.dying < 50 && b.dying % 4 === 0) G.fx({ kind: 'part', x: b.x + 40, y: ty + 10, vx: (Math.random() - .5) * 5, vy: -2 - Math.random() * 3, col: ['#2a4fb8', '#c8262c', '#f4f2ec'][Math.floor(Math.random() * 3)], sz: 3, life: 60 }); },
       draw(c, G) {
         const x = b.x;
-        // Constituição gigante atrás do Lula
-        const cxx = ar.x0 + 4; D.box(c, cxx, FLOOR - 32, 24, 32, '#efe3c0'); D.r(c, cxx + 2, FLOOR - 30, 3, 28, '#c9b98a'); D.r(c, cxx + 8, FLOOR - 24, 12, 2, '#5a3a24'); D.r(c, cxx + 8, FLOOR - 18, 12, 1, '#5a3a24'); D.r(c, cxx + 8, FLOOR - 14, 12, 1, '#5a3a24');
-        if (b.dying > 40) {
-          // desmonta em parafusos; o Herdeiro sai correndo atrás da bússola
-          for (let i = 0; i < 14; i++) D.r(c, x + 6 + (i * 37 % 60), FLOOR - 4 - (i % 3) * 2, 3, 2, '#8a8f99');
-          const fx = x + 30 + (b.dying - 40) * 1.8; SL.drawSprite(c, SL.S.flavio, Math.floor(b.dying / 6) % 2 ? 'walk' : 'stand', 1, fx, FLOOR - 20);
-          D.r(c, fx + 26 + (b.dying - 40) * .3, FLOOR - 28 - Math.sin(b.dying * .2) * 4, 4, 4, '#ffd21f');
+        // Constituição gigante atrás do Lula, pegando fogo conforme o medidor cai
+        const cxx = ar.x0 + 4; D.constBook(c, cxx, FLOOR - 32, 24, 32);
+        const meter = L.obj && L.obj.meter != null ? L.obj.meter : 100;
+        if (!b.dying) burnBook(c, cxx, FLOOR, 1 - meter / 100, G.t);
+        if (b.dying) {
+          const d = b.dying;
+          if (d < 45) {
+            // o dragão encolhe e pisca até sumir numa nuvem de fumaça
+            const s = 1 - d / 45 * .85, px = x + 45, py = FLOOR;
+            c.save(); c.translate(px, py); c.scale(s, s); c.translate(-px, -py);
+            if ((d >> 2) % 2) c.globalAlpha = .55;
+            drawDragon(c, x, FLOOR, b.t, { form: b.form, headDown: b.head });
+            c.restore();
+          }
+          if (d > 30 && d < 110) { c.fillStyle = `rgba(170,170,180,${Math.max(0, .8 - (d - 30) / 100)})`; for (let i = 0; i < 6; i++) { c.beginPath(); c.arc(x + 30 + i * 8, FLOOR - 14 - (i % 2) * 8 - (d - 30) * .15, 9 + (d - 30) * .08, 0, 7); c.fill(); } }
+          // sobra o Flavinho, que sai correndo atrás da bússola
+          if (d > 40) {
+            const fx = x + 30 + (d - 40) * 1.8; SL.drawSprite(c, SL.S.flavio, Math.floor(d / 6) % 2 ? 'walk' : 'stand', 1, fx, FLOOR - 20);
+            D.r(c, fx + 26 + (d - 40) * .3, FLOOR - 28 - Math.sin(d * .2) * 4, 4, 4, '#ffd21f');
+          }
           return;
         }
         const vis = b.inv > 0 ? blink(G) : true;
-        // rodas e corpo cinza
-        c.fillStyle = K; c.beginPath(); c.arc(x + 46, FLOOR - 14, 15, 0, 7); c.fill(); c.fillStyle = '#3a3d45'; c.beginPath(); c.arc(x + 46, FLOOR - 14, 13, 0, 7); c.fill();
-        c.fillStyle = K; c.beginPath(); c.arc(x + 14, FLOOR - 9, 9, 0, 7); c.fill(); c.fillStyle = '#3a3d45'; c.beginPath(); c.arc(x + 14, FLOOR - 9, 7, 0, 7); c.fill();
-        D.box(c, x + 4, ty + 16, 60, 18, '#8a8f99');
-        // cabine com o Herdeiro e a bússola no painel
-        D.box(c, x + 30, ty - 6, 28, 24, b.form === 0 && vis ? ((G.t >> 3) % 2 ? '#ffd21f' : '#8a8f99') : '#8a8f99');
-        D.r(c, x + 33, ty - 3, 22, 14, '#bfe6ff');
-        SL.drawSprite(c, SL.S.flavio, 'stand', -1, x + 37, ty - 6);
-        D.r(c, x + 33, ty + 8, 22, 4, '#8a8f99'); D.r(c, x + 36, ty + 6, 4, 4, '#ffd21f');
-        // capangas em silhueta na caçamba
-        D.r(c, x + 8, ty + 6, 6, 10, '#3a3d45'); D.r(c, x + 16, ty + 4, 6, 12, '#3a3d45');
-        // braço frontal
-        const r = b.reach || 0;
-        D.r(c, x - 6, FLOOR - 26, 12, 6, '#5a5f68');
-        if (b.form === 0) { D.r(c, x - r - 6, FLOOR - 10, r + 6, 4, '#bdc3cc'); D.r(c, x - r - 6, FLOOR - 6, r + 6, 2, '#5a5f68'); D.r(c, x - r - 10, FLOOR - 12, 6, 8, '#d8322c'); }
-        else if (b.form === 1) { D.r(c, x - r - 4, FLOOR - 14, r + 4, 4, '#5a5f68'); D.box(c, x - r - 14, FLOOR - 16, 12, 14, '#ffd21f'); D.box(c, x - 8, FLOOR - 30, 14, 16, vis && (G.t >> 3) % 2 ? '#ffd21f' : '#8a8f99'); }
-        else { D.r(c, x - 12, FLOOR - 26, 10, 3, '#8a5a30'); D.box(c, x - 16, FLOOR - 36, 10, 14, vis && (G.t >> 3) % 2 ? '#ffffff' : '#169c3c'); D.r(c, x - 15, FLOOR - 24, 8, 4, '#ffd21f'); }
+        if (b.inv > 0 && (G.t >> 1) % 2) c.globalAlpha = .7;
+        const lift = b.form === 1 && b.arm > 30 && b.arm < 64 ? Math.min(10, (b.arm - 30) / 2.5) : 0;
+        drawDragon(c, x, FLOOR, b.t, { form: b.form, reach: b.form === 0 ? (b.reach || 0) : 0, vis, headDown: b.head, mouth: b.mouth, lift });
+        c.globalAlpha = 1;
       }
     });
     function hitT(G) { if (b.hit(G)) { if (L.obj && L.obj.meter != null) L.obj.meter = Math.min(100, L.obj.meter + 12); } }
     return b;
   };
+  SL.Bosses.drawDragon = drawDragon;
+  SL.Bosses.burnBook = burnBook;
 })();

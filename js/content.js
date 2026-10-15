@@ -255,11 +255,11 @@ SL.C = {
       textoMotor: { placa: "NÃO PERTURBE", isento: "ISENTO", zzz: "ZZZ", bancos: ["BANCO ALTO", "CAPITAL+", "COFRE S.A.", "RENDA MAX", "BANCO NOBRE", "LUCRO & CIA"], painel: { titulo: "IMPOSTO DE RENDA", pobre: "QUEM GANHA 5 MIL", rico: "QUEM GANHA MILHÕES" } }
     },
     { // 13
-      n: 13, nome: "O Trator do Atraso", ano: "2027", ato: 2,
-      chefeNome: ["TRATOR DO ATRASO"],
-      abertura: "Hora do chefão: o Trator do Atraso, dirigido pelo Flavinho, quer passar por cima do seu salário, dos seus direitos, da nossa soberania e da democracia. Com o Alckmin de copiloto, missão: defender a Constituição e o Brasil.",
-      comando: "Aperte {ACAO} para atirar com a Caneta. O bloco VICE leva você até o trator.",
-      tropeco: ["Atropelado pelo atraso!", "A Constituição ainda pode ser salva. Tente de novo."],
+      n: 13, nome: "O Dragão do Retrocesso", ano: "2027", ato: 2,
+      chefeNome: ["FLAVINHO DRAGÃO"],
+      abertura: "Hora do chefão: com a bússola do pai, o Flavinho virou o Dragão do Retrocesso. Ele quer queimar a Constituição, leiloar o patrimônio do país e passar por cima do seu salário, dos seus direitos e da democracia. Com o Alckmin de copiloto, missão: jogar a Constituição de volta no dragão e salvar o Brasil.",
+      comando: "Aperte {ACAO} para jogar cópias da Constituição. O bloco VICE leva você até o dragão.",
+      tropeco: ["Queimado pelo retrocesso!", "A Constituição ainda pode ser salva. Tente de novo."],
       final: "Lula defende a democracia, a Constituição e a soberania: o país resistiu ao 8 de janeiro e não se curvou ao tarifaço. Flavinho disse que quer maioria no Congresso ‘para gente mudar a Constituição’. Aproveitar a maioria para mudar a Constituição foi exatamente o mesmo caminho seguido pelo nazismo e o fascismo.",
       placar: null,
       fontes: ["g1Constituicao"],
@@ -282,7 +282,7 @@ SL.C = {
     ["NO CAIS"],
     ["NO ALTO DO MORRO"],
     ["DIA DE PAGAMENTO", "ENQUANTO ISSO, OS RICOS..."],
-    ["PRAÇA DOS TRÊS PODERES", "O TRATOR"]
+    ["PRAÇA DOS TRÊS PODERES", "O DRAGÃO"]
   ],
 
   /* Instruções mostradas junto do nome do chefe na apresentação */
@@ -300,7 +300,7 @@ SL.C = {
     carimbos: "Corra ({ACAO}) por baixo dos carimbos. Quando um parar no chão, pule em cima dele.",
     polvo: "Atire com a Caneta ({ACAO}) nos 4 canos verdes. Fuja dos tentáculos que saem do chão.",
     leao: "Bata por baixo nos 4 cofres dourados: o leão corre para comer as moedas. Desvie dos botes.",
-    trator: "Pule o braço do trator e atire ({ACAO}) no ponto que pisca: 3 acertos em cada forma."
+    trator: "Pule o fogo e a onda da pisada e jogue a Constituição ({ACAO}) no ponto que pisca: bússola, joelho e boca, 3 vezes cada."
   },
 
   /* Objetivos do HUD (seção 5/6) */

@@ -1101,7 +1101,8 @@
     L.update = (G) => {
       lionInit(G); const ln = L.lion; ln.t++;
       const h = G.hero;
-      if (h.x < CHASE_END) {
+      const chase = h.x < CHASE_END && !(L.arena && L.arena.locked); // na arena (mesmo esticada para a esquerda) a perseguição acabou
+      if (chase) {
         ln.x = Math.min(LION_MAX, ln.x + (Math.max(h.x + 140, ln.x + .6) - ln.x) * .03);
         // pula por cima de blocos e paredes que saem do chão (não atravessa)
         const solid = (tx, ty) => { const ch = G.tile(tx, ty); return ch === 'X' || ch === '#' || ch === 'U'; };
@@ -1161,15 +1162,16 @@
       for (const b of BANCOS) if (b.x + 70 > cam && b.x - 4 < cam + W) banco(c, b);
       for (const px of PAINEIS) if (px + 100 > cam && px < cam + W) painel(c, px, G);
       // leão correndo
-      lionInit(G); const ln = L.lion; if (G.hero.x < CHASE_END) SL.Bosses.drawLion(c, ln.x, ln.y == null ? 120 : ln.y, ln.t, false, 1, 1);
+      lionInit(G); const ln = L.lion; if (G.hero.x < CHASE_END && !(L.arena && L.arena.locked)) SL.Bosses.drawLion(c, ln.x, ln.y == null ? 120 : ln.y, ln.t, false, 1, 1);
     };
     return L;
   };
 
-  // ---------- FASE 13 · O Trator do Atraso (Caneta) ----------
+  // ---------- FASE 13 · O Dragão do Retrocesso (cópias da Constituição) ----------
   MK[13] = () => {
     const b = builder(13, 150), L = b.L;
     L.action = 'ink';
+    L.inkKind = 'constituicao';
     b.g(0, 112).g(118, 150);
     // um inimigo de cada fase anterior
     b.e('slide', 14, 7).e('caco', 20, 10).e('placa', 26, 10).e('panela', 32, 10).e('moto', 38, 10).e('gear', 46, 10).e('leilao', 52, 10, { kind: 'leilao' });
@@ -1220,7 +1222,8 @@
       BG.congresso(c, px + 200, 150, '#7a7f88'); BG.planalto(c, px + 380, 150, '#7a7f88'); BG.stf(c, px + 40, 150, '#7a7f88');
       if (!(L.boss && L.boss.done)) for (let i = 0; i < 8; i++) { const x = ((i * 70 - cam * .2) % (G.W + 70) + G.W + 70) % (G.W + 70) - 35; D.r(c, x, 30 + (i % 3) * 14, 50, 10, '#4a4f58aa'); }
     };
-    L.handItem = (c, G, h) => { const x = h.x + (h.face > 0 ? 9 : -3); D.r(c, x, h.y + 8, 4, 1, '#1a2a6a'); };
+    // Lula segura uma cópia da Constituição
+    L.handItem = (c, G, h) => D.constTiny(c, h.x + (h.face > 0 ? 9 : -5), h.y + 6);
     return L;
   };
   MK[4].hand = (c, G, h) => { const x = h.x + (h.face > 0 ? 9 : -3); D.r(c, x, h.y + 8, 4, 1, '#1a2a6a'); };
