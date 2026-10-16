@@ -447,8 +447,9 @@
   /* ================= fases ================= */
   const MK = [];
   // Cada fase tem UM só prêmio especial (nunca os três juntos), 1/3 para cada:
-  // Picanha nas fases 0, 1, 2, 3, 8 · Bandeira do Brasil (capa) nas 5, 6, 9, 11 · Estrela Vermelha nas mais difíceis: 4, 7, 10, 12, 13
-  const PREMIO_DA_FASE = { 0: 'picanha', 1: 'picanha', 2: 'picanha', 3: 'picanha', 8: 'picanha',
+  // Picanha nas fases 0, 1, 2, 8 · Bandeira do Brasil (capa) nas 5, 6, 9, 11 · Estrela Vermelha nas 3, 4, 7, 10, 12, 13
+  // (fase 3, da Dona Fome, sem picanha: não combina com a distribuição de cesta básica)
+  const PREMIO_DA_FASE = { 0: 'picanha', 1: 'picanha', 2: 'picanha', 3: 'star', 8: 'picanha',
     5: 'flag', 6: 'flag', 9: 'flag', 11: 'flag',
     4: 'star', 7: 'star', 10: 'star', 12: 'star', 13: 'star' };
   const ESPECIAIS = ['star', 'picanha', 'flag'];
@@ -617,11 +618,41 @@
       const h = G.hero;
       if (g.t < 175) { D.r(c, g.x, g.y, 9, 3, K); D.r(c, g.x + 1, g.y + 1, 7, 1, '#6f7580'); D.r(c, g.x + 1, g.y + 3, 3, 3, K); }
       if (g.t > 80 && g.t < 130) { D.r(c, h.x + 1, h.y + 3, 4, 1, K); D.r(c, h.x + 6, h.y + 3, 4, 1, K); D.balloon(c, '✗', h.x + 5, h.y - 2, { size: 6, col: '#d8322c' }); }
-      if (g.t >= 175) { D.r(c, h.x + 8, h.y + 6, 6, 4, K); D.r(c, h.x + 9, h.y + 7, 5, 2, '#ffd21f'); D.r(c, h.x + 13, h.y + 5, 3, 6, '#ffd21f'); }
+      if (g.t >= 175) megafone(c, h, G.t, g.t < 200 ? 1 - (g.t - 175) / 25 : 0);
     };
-    L.handItem = (c, G, h) => { if (L.gun && !L.gun.done) return; const x = h.x + (h.face > 0 ? 8 : -5); D.r(c, x, h.y + 8, 6, 4, K); D.r(c, x + (h.face > 0 ? 1 : 0), h.y + 9, 5, 2, '#ffd21f'); };
+    L.handItem = (c, G, h) => { if (L.gun && !L.gun.done) return; megafone(c, h, G.t, h.cool > 18 ? (h.cool - 18) / 12 : 0); };
     return L;
   };
+
+  // megafone de desenho animado: bocal pequeno na mão e uma boca enorme, com aro vermelho.
+  // puff (0–1) = acabou de gritar: o megafone estufa e solta ondas de som
+  function megafone(c, h, t, puff) {
+    const f = h.face > 0 ? 1 : -1, hx = h.x + (f > 0 ? 9 : 1), hy = h.y + 9;
+    const s = 1 + puff * .18, L0 = 3, L1 = 17 * s, r0 = 2, r1 = 7.5 * s;
+    c.save(); c.translate(hx, hy); c.scale(f, 1);
+    // cabo
+    D.r(c, 0, 1, 3, 6, K); D.r(c, 1, 2, 1, 4, '#d8322c');
+    // bocal
+    D.r(c, -2, -3, 6, 6, K); D.r(c, -1, -2, 4, 4, '#f4f2ec');
+    // cone
+    const cone = (ex) => { c.beginPath(); c.moveTo(L0, -r0 - ex); c.lineTo(L1, -r1 - ex); c.lineTo(L1, r1 + ex); c.lineTo(L0, r0 + ex); c.closePath(); c.fill(); };
+    c.fillStyle = K; cone(1); c.fillStyle = '#ffd21f'; cone(0);
+    // faixa vermelha no meio e brilho branco em cima
+    const mx = (L0 + L1) / 2, mr = (r0 + r1) / 2;
+    c.fillStyle = '#d8322c'; c.fillRect(mx - 1.5, -mr - .2, 3, mr * 2 + .4);
+    c.fillStyle = '#fff6b0'; c.beginPath(); c.moveTo(L0 + 1, -r0 + .6); c.lineTo(L1 - 2, -r1 + 1.6); c.lineTo(L1 - 2, -r1 + 3); c.lineTo(L0 + 1, -r0 + 1.6); c.closePath(); c.fill();
+    // aro da boca (vermelho) e o "buraco"
+    c.fillStyle = K; c.beginPath(); c.ellipse(L1, 0, 3.2, r1 + 1.6, 0, 0, 7); c.fill();
+    c.fillStyle = '#d8322c'; c.beginPath(); c.ellipse(L1, 0, 2.4, r1 + .8, 0, 0, 7); c.fill();
+    c.fillStyle = '#5a0d06'; c.beginPath(); c.ellipse(L1 + .4, 0, 1.2, r1 - 1.6, 0, 0, 7); c.fill();
+    // ondas de som quando grita
+    if (puff > 0) {
+      c.strokeStyle = '#ffffff'; c.lineWidth = 1.5;
+      for (let i = 0; i < 3; i++) { const R = 4 + i * 4 + (1 - puff) * 6; c.globalAlpha = puff * (1 - i * .25); c.beginPath(); c.arc(L1 + 2, 0, R, -.8, .8); c.stroke(); }
+      c.globalAlpha = 1; c.lineWidth = 1;
+    }
+    c.restore();
+  }
 
   // ---------- FASE 3 · Dona Fome (cartão do Bolsa Família) ----------
   MK[3] = () => {
@@ -634,7 +665,7 @@
     kitchens.forEach((x, i) => { b.npc(cook(i), x + 1, 10, { face: 1 }); b.npc(cook(i + 3), x + 3, 10, { face: -1 }); if (i) b.cp(x); });
     for (const x of [20, 38, 68, 82, 112]) b.t(T.fridge(x));
     for (const x of [28, 34, 62, 74, 104, 118, 140]) b.e('panela', x, 10);
-    b.q(14, 6).q(15, 6, 'picanha').coins(24, 7, 3).p(44, 7, 4).coins(44, 6, 4);
+    b.q(14, 6).q(15, 6, 'star').coins(24, 7, 3).p(44, 7, 4).coins(44, 6, 4);
     b.br(66, 6, 2).q(68, 6, 'star').br(69, 6, 1).X(86, 9, 1, 1);
     b.p(92, 7, 3).coins(92, 6, 3).stairs(120, 3);
     b.gate(144, 2, 9);
@@ -717,13 +748,11 @@
     b.g(0, 178);
     // fábrica: esteiras
     b.X(10, 10, 8, 1, '>').X(26, 10, 6, 1, '<').X(40, 10, 10, 1, '>');
-    for (const x of [14, 30, 44, 56]) b.e('gear', x, 10);
     b.q(20, 6).q(21, 6, 'picanha').coins(34, 7, 4);
     b.t(T.clock(22)).t(T.clock(36)).p(48, 7, 3).t(T.clock(54)).hole(60, 63).p(60, 6, 3);
     b.t(T.clock(70)).cp(74);
     // escritório
     for (const x of [82, 90, 98, 106, 120, 128]) b.e('notif', x, 10);
-    for (const x of [86, 112]) b.e('gear', x, 10);
     b.X(94, 8, 2, 2).X(102, 6, 2, 4).q(108, 6, 'star').coins(102, 4, 2);
     b.t(T.clock(99)).t(T.clock(124));
     b.X(132, 10, 8, 1, '<').t(T.clock(144)).p(116, 7, 3);
@@ -825,8 +854,6 @@
     L.scissors = [[40, 7], [72, 8], [88, 6], [118, 8], [140, 7]];
     b.gate(150, 2, 9).g(150, 151);
     b.arena(['serpente']);
-    // 3 plataformas na arena (vazadas: dá para subir pulando por baixo) para alcançar a cabeça da serpente
-    b.p(153, 7, 3).p(159, 5, 4).p(166, 7, 3);
     L.arenaNeed = () => L.gateOpen;
     L.update = (G) => {
       // tesouras voadoras entram pela direita quando o herói chega perto

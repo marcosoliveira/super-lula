@@ -445,7 +445,7 @@
     if (a === 'fan') {
       if (h.cool > 0) return;
       h.cool = 30; A.sfx('mega');
-      for (const vy of [-1, 0, 1]) L.shots.push({ kind: 'card', x: h.x + (h.face > 0 ? h.w : -8), y: h.y + 6, w: 8, h: 6, vx: 3.2 * h.face, vy: vy * .9, g: 0, life: 42, col: '#2449c9' });
+      for (const vy of [-1, 0, 1]) L.shots.push({ kind: 'card', x: h.x + (h.face > 0 ? h.w + 14 : -22), y: h.y + 6, w: 8, h: 6, vx: 3.2 * h.face, vy: vy * .9, g: 0, life: 42, col: '#2449c9' });
       return;
     }
     if (a === 'bolsa' || a === 'med') {
@@ -742,6 +742,8 @@
     G.clearT++;
     // Ato 1: com a vitória, as cores e a música normais voltam
     const LL = G.L;
+    // bandeira do fim da fase: ao chegar, ela sobe e se reestaura
+    if (LL.goalX != null) LL.flagK = Math.min(1, Math.max(0, (G.clearT - 6) / 80));
     if (LL.musicOk && G.clearT === 25) { A.play(LL.musicOk); G.toast(C.normalidade, 110); }
     if (LL.gloom > 0 && G.clearT > 20) {
       LL.gloom = Math.max(0, LL.gloom - 1 / 80);
@@ -1244,7 +1246,7 @@
     drawTiles(cam);
     if (L.gloom > 0) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); gloomPass(L.gloom); ctx.restore(); }
     for (const cp of L.cps) D.flag(ctx, cp.x, 160 - 32, cp.on, G.t);
-    if (L.goalX != null) D.goal(ctx, L.goalX, 160 - 64, G.t);
+    if (L.goalX != null) D.goal(ctx, L.goalX, 160 - 64, G.t, L.flagK || 0);
     for (const t of L.targets) t.draw(ctx, G);
     for (const m of L.movers) m.draw(ctx, G);
     for (const it of L.items) drawItem(it);

@@ -162,7 +162,7 @@ SL.C = {
       abertura: "2020, plena pandemia. Numa reunião ministerial gravada em vídeo, o ministro do Meio Ambiente, Ricardo Salles, defendeu aproveitar a distração para ‘ir passando a boiada’ nas regras ambientais. Missão: plantar de volta e fechar a porteira.",
       comando: "Pegue as mudas pelo caminho e passe nas clareiras para plantar: cada muda vira árvore. No fim, aperte {ACAO} para assinar com a Caneta e fechar as porteiras.",
       tropeco: ["Passou a boiada!", "Feche a porteira antes do próximo boi."],
-      final: "Segundo o Inpe, o desmatamento na Amazônia caiu de 11.594 km² em 2022 para 5.731 km² em 2025: menos da metade. Lula fazendo a boiada voltar para o pasto.",
+      final: "Segundo o Inpe, o desmatamento na Amazônia caiu de 11.594 km² em 2022 para 5.731 km² em 2025: menos da metade. Porteira fechada: a Amazônia voltou a ser protegida contra o desmatamento.",
       placar: ["Desmatamento (km²)", "11.594 → 5.731"],
       fontes: ["opovoSalles", "inpe"],
       revisaoJuridica: true, revisaoNota: "fase inteira, antes de publicar",
@@ -174,9 +174,9 @@ SL.C = {
       abertura: "Seis dias de trabalho para um de folga, na fábrica ou na tela do home office. O domingo virou lenda. Missão: bater o ponto, parar o relógio infinito e devolver tempo para descansar e ficar com a família.",
       comando: "Segure {ACAO} para correr. Pule em cima dos relógios de ponto pelo caminho: bata 6 dos 7 pontos para chegar ao chefão.",
       tropeco: ["Hora extra!", "O relógio de ponto não deixou você sair."],
-      final: "O fim da escala 6x1, com no máximo 40 horas por semana e sem corte de salário, passou na Câmara por 472 x 22 e está em debate no Senado. Flavinho é contra esse texto: quer reduzir a jornada com corte proporcional do salário. Logo ele, que segundo reportagem da BBC News Brasil teve um cargo fantasma na Câmara, na escala 0x7.",
+      final: "Aprovado! O fim da escala 6x1 passou na Câmara por 472 x 22 e, nesta semana, no Senado por 75 x 1. A jornada cai de 44 para 40 horas por semana, com dois dias de folga e sem corte de salário. Flavinho foi contra esse texto: queria reduzir a jornada com corte proporcional do salário. Logo ele, que segundo reportagem da BBC News Brasil teve um cargo fantasma na Câmara, na escala 0x7.",
       placar: ["Jornada", "44 h → 40 h"],
-      fontes: ["camara6x1", "globo6x1", "planoLula75", "cmFlavio6x1", "agSenado8jan", "ibgeAnual", "lei14601", "petroLucro", "poderRenan", "bbcFantasma"],
+      fontes: ["camara6x1", "conjur6x1", "planoLula75", "cmFlavio6x1", "agSenado8jan", "ibgeAnual", "lei14601", "petroLucro", "poderRenan", "bbcFantasma"],
       revisaoJuridica: true, revisaoNota: "frase final",
       cameo: "40 h com corte de salário",
       // fala real (Correio da Manhã, 7/10/2026), ao criticar o fim da escala 6x1
@@ -338,6 +338,7 @@ SL.C = {
     camara6x1:      ["Câmara: fim da 6x1", "https://www.camara.leg.br/noticias/1277141-camara-aprova-em-dois-turnos-fim-da-escala-6x1-com-jornada-maxima-de-40-horas-semanais/"],
     bbcFantasma:    ["BBC News Brasil, 14/05/2026: o cargo de Flávio na Câmara (investigação jornalística, sem condenação)", "https://www.bbc.com/portuguese/articles/crmpv9r7mz9o"],
     cmFlavio6x1:    ["Correio da Manhã: Flávio contra o fim da 6x1", "https://www.correiodamanha.com.br/politica/2026/10/325178-contra-fim-da-6x1-flavio-defende-jornada-flexivel-quem-quer-trabalhar-mais-vai-trabalhar-mais.html"],
+    conjur6x1:      ["ConJur, 15/10/2026: Senado aprova fim da escala 6x1 (75 x 1, em dois turnos)", "https://conjur.com.br/2026-out-15/senado-aprova-fim-da-escala-6x1-e-reducao-da-jornada-de-trabalho/"],
     globo6x1:       ["O Globo: 6x1 no Senado", "https://oglobo.globo.com/economia/noticia/2026/10/08/fim-da-escala-6x1-senado-faz-3a-sessao-de-debate-da-pec-governo-tenta-votar-antes-do-2o-turno.ghtml"],
     emTerras:       ["Estado de Minas: terras raras", "https://www.em.com.br/politica/2026/09/7499166-terras-raras-plano-com-marca-de-flavio-bolsonaro-preve-parceria-com-eua.html"],
     sbtTrump:       ["SBT News: Flávio agradece a Trump", "https://sbtnews.sbt.com.br/colunas/coluna-do-ranier/flavio-tambem-agradeceu-a-trump-por-tarifas-em-2025"],
@@ -373,5 +374,5 @@ SL.C = {
   },
 
   /* ordem da lista de fontes nos créditos (seção 10) */
-  creditosFontes: ["planoLula", "planoFlavio", "stfMoro", "globoToffoli", "correio", "stfGolpe", "stfPena", "ibge", "opovoOsso", "abFome", "opovoSalles", "inpe", "camara6x1", "globo6x1", "cmFlavio6x1", "bbcFantasma", "emTerras", "sbtTrump", "bbcAdriano", "g1Constituicao", "dieese", "agenciaGov", "lei15270", "camaraIR", "senadoIR", "jovemPan", "sbtEmenda", "intercept", "onu", "penssan", "fao", "ipeadata", "g1Farmacia", "g1Estatais", "lei14818", "mp1309", "abTarifas", "senado", "tse", "cfAlckmin06", "globo22"]
+  creditosFontes: ["planoLula", "planoFlavio", "stfMoro", "globoToffoli", "correio", "stfGolpe", "stfPena", "ibge", "opovoOsso", "abFome", "opovoSalles", "inpe", "camara6x1", "conjur6x1", "cmFlavio6x1", "bbcFantasma", "emTerras", "sbtTrump", "bbcAdriano", "g1Constituicao", "dieese", "agenciaGov", "lei15270", "camaraIR", "senadoIR", "jovemPan", "sbtEmenda", "intercept", "onu", "penssan", "fao", "ipeadata", "g1Farmacia", "g1Estatais", "lei14818", "mp1309", "abTarifas", "senado", "tse", "cfAlckmin06", "globo22"]
 };

@@ -233,11 +233,7 @@
         const y = b.y || cy;
         const full = b.dying > 20;
         // garfo e faca como braços
-        D.r(c, cx - 40, y - 4, 14, 3, '#9aa3ad'); D.r(c, cx - 44, y - 10, 2, 8, '#9aa3ad'); D.r(c, cx - 40, y - 10, 2, 8, '#9aa3ad'); D.r(c, cx - 36, y - 10, 2, 8, '#9aa3ad');
-        D.r(c, cx + 26, y - 4, 16, 3, '#9aa3ad'); D.r(c, cx + 38, y - 12, 4, 10, '#bdc3cc');
-        c.fillStyle = K; c.beginPath(); c.ellipse(cx, y, 29, 24, 0, 0, 7); c.fill();
-        c.fillStyle = '#ffffff'; c.beginPath(); c.ellipse(cx, y, 28, 23, 0, 0, 7); c.fill();
-        c.fillStyle = '#e4e8ee'; c.beginPath(); c.ellipse(cx, y, 20, 16, 0, 0, 7); c.fill();
+        D.prato(c, cx, y, true);
         if (full) { // prato cheio: arroz, feijão e salada, sorrindo
           D.r(c, cx - 14, y - 6, 12, 10, '#fbfbf2'); D.r(c, cx - 2, y - 4, 10, 9, '#6a3a1a'); D.r(c, cx + 6, y - 9, 9, 8, '#3ec04a'); D.r(c, cx + 9, y - 7, 3, 3, '#d8322c');
           D.r(c, cx - 10, y - 14, 3, 3, K); D.r(c, cx + 7, y - 14, 3, 3, K); D.r(c, cx - 6, y + 8, 12, 2, K); D.r(c, cx - 8, y + 6, 2, 2, K); D.r(c, cx + 6, y + 6, 2, 2, K);
@@ -311,8 +307,8 @@
         if (!b.dying) ang += speed;
         const core = { x: cx - 7, y: cy - 7, w: 14, h: 14 };
         if (G.stomps(core)) { G.bounce(true); if (b.hit(G)) speed += .006; }
-        if (b.t % 120 === 30) { const g = SL.mkE('gear', cx - 6, FLOOR, { always: true, vx: G.hero.x < cx ? -1 : 1 }); G.addEnt(g); }
-        if (b.t % 140 === 90) { const n = SL.mkE('notif', ar.x0 + 30 + Math.random() * 260, 40, { always: true }); G.addEnt(n); }
+        // (as engrenagens rolando no chão foram removidas: só as notificações caem do céu)
+        if (b.t % 140 === 90 && G.L.ents.filter(e => e.bossNotif && !e.dead).length < 3) { const n = SL.mkE('notif', ar.x0 + 30 + Math.random() * 260, 40, { always: true, bossNotif: true }); G.addEnt(n); }
       },
       cleanup(G) { G.L.movers = G.L.movers.filter(m => !hands.includes(m)); for (const e of G.L.ents) if (e.kind === 'gear' || e.kind === 'notif') e.dead = true; },
       draw(c, G) {
@@ -367,7 +363,7 @@
 
   /* ---------- Fase 7 · Serpente do Tesouraço (A-04) ----------
      Corpo de tesouras pequenas; a cabeça é uma tesoura 6x maior: os anéis dos dedos são os olhos, as lâminas são a boca.
-     Ciclo: flutua → atira 3 tesouras → mira e dá o bote → se errar, a cabeça crava no chão (corpo inofensivo) e o
+     Ciclo: flutua → atira 2 tesouras → mira e dá o bote → se errar, a cabeça crava no chão (corpo inofensivo) e o
      jogador pula em cima. 3 acertos vencem. */
   function smallScissor(c, x, y, rot, open) {
     c.save(); c.translate(x, y); c.rotate(rot);
@@ -420,15 +416,15 @@
           const k = b.t * .018, tx = ar.x0 + 170 + Math.sin(k) * 110, ty = 54 + Math.sin(k * 2.2) * 18;
           b.hx += (tx - b.hx) * .05; b.hy += (ty - b.hy) * .05;
           ang += ((look) - ang) * .08; open = .25 + Math.abs(Math.sin(b.t * .1)) * .35;
-          if (mode === 'float' && mt > 70) { mode = 'shoot'; mt = 0; shots = 0; }
-          if (mode === 'shoot' && mt % 30 === 15 && shots < 3) {
+          if (mode === 'float' && mt > 130) { mode = 'shoot'; mt = 0; shots = 0; }
+          if (mode === 'shoot' && mt % 50 === 20 && shots < 2) { // 2 tesouras por ciclo, bem espaçadas
             shots++; G.sfx('throw'); open = 1;
             const sp = 2.4, dx = h.x + 5 - b.hx, dy = h.y + 9 - b.hy, d = Math.hypot(dx, dy) || 1;
             const z = G.hz({ x: b.hx - 6, y: b.hy - 6, w: 12, h: 12, vx: dx / d * sp, vy: dy / d * sp, life: 300, rot: 0 });
             z.update = (G, z) => { z.x += z.vx; z.y += z.vy; z.rot += .35; if (z.y > FLOOR - 6) z.dead = true; };
             z.draw = (c, G, z) => smallScissor(c, z.x + 6, z.y + 6, z.rot, .5 + Math.sin(z.rot * 2) * .3);
           }
-          if (mode === 'shoot' && shots >= 3 && mt > 110) { mode = 'aim'; mt = 0; }
+          if (mode === 'shoot' && shots >= 2 && mt > 110) { mode = 'aim'; mt = 0; }
         } else if (mode === 'aim') {
           ang += (look - ang) * .2; open = (mt >> 2) % 2 ? .9 : .2;
           b.hx += Math.sin(mt * 1.3) * .8;

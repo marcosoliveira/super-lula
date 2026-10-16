@@ -313,6 +313,35 @@
     }, 140)
   ];
 
+  // geladeira retrô: congelador em cima, porta grande embaixo, puxadores, pezinhos
+  function fridge(c, x, y, open, t) {
+    const w = 32, h = 80, fz = 24;
+    D.r(c, x + 3, y + h, 4, 3, K); D.r(c, x + w - 7, y + h, 4, 3, K);           // pés
+    D.r(c, x + 1, y, w - 2, h, K); D.r(c, x, y + 2, w, h - 4, K);              // contorno com cantos arredondados
+    D.r(c, x + 2, y + 1, w - 4, h - 2, '#f4f2ec'); D.r(c, x + 1, y + 3, w - 2, h - 6, '#f4f2ec');
+    D.r(c, x + w - 4, y + 3, 3, h - 6, '#d8d4c8');                               // sombra lateral
+    D.r(c, x + 1, y + fz, w - 2, 1, K);                                          // divisão congelador / geladeira
+    if (!open) {
+      D.r(c, x + w - 7, y + 8, 2, 11, '#8a8f99'); D.r(c, x + w - 7, y + fz + 6, 2, 22, '#8a8f99');
+      D.r(c, x + 5, y + 5, 8, 3, '#d8322c');                                     // plaquinha da marca
+      return;
+    }
+    // aberta: interior vazio, luzinha acesa, prateleiras sem nada
+    const ix = x + 3, iy = y + fz + 2, iw = w - 6, ih = h - fz - 5;
+    D.r(c, ix, iy, iw, ih, '#a8cfe0'); D.r(c, ix + 2, iy + 2, iw - 4, ih - 4, '#cfe6f0');
+    D.r(c, ix + iw / 2 - 2, iy + 1, 4, 2, '#fff6b0');
+    for (let k = 1; k <= 3; k++) D.r(c, ix + 1, iy + k * (ih / 4), iw - 2, 1, '#ffffff');
+    D.r(c, ix + 3, iy + ih - 8, iw - 6, 6, '#8fbcd0');                           // gaveta de legumes vazia
+    D.r(c, x + w - 7, y + 8, 2, 11, '#8a8f99');
+    // porta aberta para a direita, em perspectiva, com prateleiras de porta vazias
+    const dx = x + w, dw = 13;
+    c.fillStyle = K; c.beginPath(); c.moveTo(dx, y + fz); c.lineTo(dx + dw, y + fz - 4); c.lineTo(dx + dw, y + h + 2); c.lineTo(dx, y + h - 2); c.closePath(); c.fill();
+    c.fillStyle = '#e4e2dc'; c.beginPath(); c.moveTo(dx + 1, y + fz + 2); c.lineTo(dx + dw - 1, y + fz - 1); c.lineTo(dx + dw - 1, y + h); c.lineTo(dx + 1, y + h - 3); c.closePath(); c.fill();
+    for (let k = 0; k < 3; k++) { const yy = y + fz + 14 + k * 16; c.fillStyle = '#b8bec8'; c.beginPath(); c.moveTo(dx + 2, yy); c.lineTo(dx + dw - 2, yy - 2); c.lineTo(dx + dw - 2, yy + 2); c.lineTo(dx + 2, yy + 4); c.closePath(); c.fill(); }
+    // mosquinha rondando a geladeira vazia
+    const fx = ix + iw / 2 + Math.cos(t * .09) * 9, fy = iy + 14 + Math.sin(t * .13) * 6;
+    D.r(c, fx, fy, 2, 2, K); if ((t >> 1) % 2) { D.r(c, fx - 1, fy - 1, 1, 1, '#ffffff'); D.r(c, fx + 2, fy - 1, 1, 1, '#ffffff'); }
+  }
   CUT[3] = () => [
     fr(3, 0, (c, t, G) => {
       const W = G.W; sky(c, W, '#ffb36b', '#ffe4b0');
@@ -325,12 +354,25 @@
     }, 170),
     fr(3, 1, (c, t, G) => {
       const W = G.W; c.fillStyle = '#c8a070'; c.fillRect(0, 0, W, 192);
-      for (let i = 0; i < 3; i++) { const x = 30 + i * 46; D.box(c, x, 70, 30, 80, '#f4f2ec'); D.r(c, x + 3, 74, 24, 72, '#cfe6f0'); D.r(c, x + 29, 72, 14, 76, '#e4e2dc'); }
+      // azulejo da cozinha
+      for (let y = 0; y < 150; y += 12) for (let x = (y / 12) % 2 ? 6 : 0; x < W; x += 12) D.r(c, x, y, 1, 1, '#b48a5c');
       ground(c, W, 150, '#c89a5a', '#8b5a2b');
+      // 3 geladeiras: a 1ª fechada, as outras de porta aberta e prateleiras vazias
+      for (let i = 0; i < 3; i++) fridge(c, 18 + i * 54, 70, i > 0, t + i * 37);
+      // placa
+      const px = 94, py = 40;
+      D.r(c, px - 30, py - 12, 1, 12, '#5a3a24'); D.r(c, px + 30, py - 12, 1, 12, '#5a3a24');
+      D.box(c, px - 46, py, 92, 14, '#ffd21f'); D.text(c, 'GELADEIRAS VAZIAS', px, py + 4, '#1a1020', 5, 'center', false);
       const cx = W - 70, cy = 90 + Math.sin(t * .1) * 3;
-      c.fillStyle = K; c.beginPath(); c.ellipse(cx, cy, 29, 24, 0, 0, 7); c.fill(); c.fillStyle = '#fff'; c.beginPath(); c.ellipse(cx, cy, 28, 23, 0, 0, 7); c.fill();
-      D.r(c, cx - 12, cy - 12, 6, 6, K); D.r(c, cx + 6, cy - 12, 6, 6, K); D.r(c, cx - 12, cy + 1, 24, 10, K); D.r(c, cx - 10, cy + 3, 20, 6, '#d8322c');
-      D.balloon(c, 'HA HA HA', cx, cy - 26, { size: 6 });
+      D.prato(c, cx, cy, true);
+      // rosto no fundo do prato vazio, rindo
+      D.r(c, cx - 11, cy - 9, 5, 5, K); D.r(c, cx + 6, cy - 9, 5, 5, K); D.r(c, cx - 10, cy - 8, 2, 2, '#fff'); D.r(c, cx + 7, cy - 8, 2, 2, '#fff');
+      D.r(c, cx - 13, cy - 13, 7, 1, K); D.r(c, cx + 6, cy - 13, 7, 1, K);
+      const op = (t >> 3) % 2;
+      D.r(c, cx - 10, cy + 1, 20, 8 + op * 2, K); D.r(c, cx - 8, cy + 3, 16, 4 + op * 2, '#d8322c'); D.r(c, cx - 7, cy + 1, 4, 2, '#fff'); D.r(c, cx + 3, cy + 1, 4, 2, '#fff');
+      // migalhas
+      D.r(c, cx + 12, cy + 8, 1, 1, '#c8a070'); D.r(c, cx - 15, cy + 6, 1, 1, '#c8a070'); D.r(c, cx + 14, cy - 2, 1, 1, '#c8a070');
+      D.balloon(c, 'HA HA HA', cx, cy - 28, { size: 6 });
     }, 140)
   ];
 

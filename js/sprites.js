@@ -320,6 +320,35 @@
     c.fillStyle = '#ffd21f'; c.beginPath(); c.moveTo(cx, y + 2); c.lineTo(x + w - 3, cy); c.lineTo(cx, y + h - 2); c.lineTo(x + 3, cy); c.closePath(); c.fill();
     c.fillStyle = '#2449c9'; c.beginPath(); c.arc(cx, cy, Math.min(w, h) * .22, 0, 7); c.fill();
   };
+  // prato raso (Dona Fome): aba larga com faixa azul, fundo rebaixado com sombra, brilho; garfo e faca de braços
+  D.prato = (c, cx, cy, arms) => {
+    const K = '#1a1020';
+    if (arms) {
+      // garfo (esquerda) e faca (direita)
+      D.r(c, cx - 44, cy - 3, 16, 3, K); D.r(c, cx - 43, cy - 2, 14, 1, '#bdc3cc');
+      D.r(c, cx - 50, cy - 7, 7, 10, K); D.r(c, cx - 49, cy - 6, 5, 8, '#bdc3cc');
+      for (let i = 0; i < 3; i++) { D.r(c, cx - 50 + i * 3, cy - 15, 2, 9, K); D.r(c, cx - 50 + i * 3, cy - 14, 1, 8, '#dfe4ea'); }
+      D.r(c, cx + 28, cy - 3, 14, 3, K); D.r(c, cx + 29, cy - 2, 12, 1, '#8a6a40');
+      c.fillStyle = K; c.beginPath(); c.moveTo(cx + 40, cy - 4); c.lineTo(cx + 56, cy - 9); c.lineTo(cx + 56, cy - 2); c.lineTo(cx + 40, cy + 1); c.closePath(); c.fill();
+      c.fillStyle = '#dfe4ea'; c.beginPath(); c.moveTo(cx + 41, cy - 3); c.lineTo(cx + 55, cy - 7.5); c.lineTo(cx + 55, cy - 3); c.lineTo(cx + 41, cy); c.closePath(); c.fill();
+    }
+    const el = (dx, dy, rx, ry, col) => { c.fillStyle = col; c.beginPath(); c.ellipse(cx + dx, cy + dy, rx, ry, 0, 0, 7); c.fill(); };
+    el(2, 4, 30, 24, 'rgba(0,0,0,.18)');            // sombra
+    el(0, 0, 31, 25, K);                             // contorno
+    el(0, 0, 30, 24, '#ffffff');                     // aba
+    el(1.5, 1.5, 29, 22.5, '#e4e8ee'); el(-.5, -.5, 28.5, 22.5, '#ffffff');   // sombra da aba (baixo/direita)
+    // faixa azul decorativa na aba
+    c.strokeStyle = '#2449c9'; c.lineWidth = 1; c.beginPath(); c.ellipse(cx, cy, 26, 20.5, 0, 0, 7); c.stroke();
+    for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; D.r(c, Math.round(cx + Math.cos(a) * 26) - 1, Math.round(cy + Math.sin(a) * 20.5) - 1, 2, 2, '#2449c9'); }
+    // fundo rebaixado: borda escura, sombra no alto, fundo claro
+    el(0, 0, 21, 16.5, '#9aa3ad');
+    el(0, 0, 20, 15.5, '#cfd5dd');
+    el(0, 1.5, 19.5, 14, '#eef1f5');
+    // brilho
+    D.r(c, cx - 22, cy - 13, 6, 2, '#ffffff'); D.r(c, cx - 24, cy - 10, 2, 3, '#ffffff');
+    c.fillStyle = '#ffffff'; c.globalAlpha = .7; c.beginPath(); c.ellipse(cx - 9, cy - 7, 5, 2, -.4, 0, 7); c.fill(); c.globalAlpha = 1;
+    c.lineWidth = 1;
+  };
   D.boneIcon = (c, x, y) => {
     D.r(c, x + 2, y, 10, 1, '#1a1020'); D.r(c, x + 1, y + 1, 12, 5, '#1a1020'); D.r(c, x + 2, y + 1, 10, 5, '#d8322c');
     D.r(c, x + 8, y + 5, 7, 2, '#1a1020'); D.r(c, x + 9, y + 5, 5, 1, '#b8221c');
@@ -340,11 +369,45 @@
     // a estrela acompanha o tecido inteira (sem se deformar)
     if (on) { const d = dy(10); FLAG_STAR.forEach((row, sy) => { for (let sx = 0; sx < 5; sx++) if (row[sx] === '#') D.r(c, x + 8 + sx, y + 5 + sy + d, 1, 1, '#ffffff'); }); }
   };
-  D.goal = (c, x, y, t) => {
+  // bandeira do fim da fase: a do Brasil. k = 0 → rasgada e caída no pé do mastro;
+  // 0 < k < 1 → sobe pelo mastro e os rasgos se fecham; k = 1 → inteira, tremulando no alto
+  const GF = { W: 30, H: 20, base: null, tmp: null, thr: null };
+  function goalInit() {
+    const mk = () => { const cv = document.createElement('canvas'); cv.width = GF.W; cv.height = GF.H; const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; return [cv, x]; };
+    const [b, bc] = mk(); D.flagIcon(bc, 0, 0, GF.W, GF.H); GF.base = b;
+    GF.tmp = mk();
+    // rasgos: borda solta em zigue-zague, um talho na diagonal e um furo; cada pixel rasgado volta num momento diferente
+    let s = 7; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    GF.thr = [];
+    for (let y = 0; y < GF.H; y++) for (let x = 0; x < GF.W; x++) {
+      const edge = x >= 21 + ((y * 5) % 7) - (y % 3);
+      const slash = Math.abs((x - 5) - (y * .9)) < 1.1 && y > 3 && y < 15;
+      const hole = (x - 13) ** 2 + (y - 14) ** 2 < 6;
+      GF.thr.push(edge || slash || hole ? .15 + rnd() * .7 : 0);
+    }
+  }
+  D.goal = (c, x, y, t, k) => {
+    k = k || 0;
+    if (!GF.base) goalInit();
     D.r(c, x + 6, y, 3, 64, '#f4f2ec'); D.r(c, x + 5, y - 3, 5, 5, '#ffd21f');
-    const wv = Math.sin(t / 10) * 1.5;
-    D.r(c, x + 9, y + 4 + wv, 18, 12, '#1a1020'); D.r(c, x + 10, y + 5 + wv, 16, 10, '#e8412c');
-    D.r(c, x + 15, y + 8 + wv, 6, 4, '#ffd21f');
+    // monta o pano do quadro: bandeira com os rasgos ainda abertos e cor apagada
+    const [tc, tx] = GF.tmp, W = GF.W, H = GF.H;
+    tx.clearRect(0, 0, W, H); tx.drawImage(GF.base, 0, 0);
+    for (let i = 0; i < GF.thr.length; i++) if (GF.thr[i] && k < GF.thr[i]) tx.clearRect(i % W, (i / W) | 0, 1, 1);
+    if (k < 1) { tx.globalCompositeOperation = 'source-atop'; tx.fillStyle = `rgba(70,64,80,${(1 - k) * .55})`; tx.fillRect(0, 0, W, H); tx.globalCompositeOperation = 'source-over'; }
+    const ground = y + 64;
+    const e = k * k * (3 - 2 * k);                 // suaviza a subida
+    const hh = Math.round(9 + (H - 9) * e);        // caída fica estendida no chão (9 px), em pé tem 20 px
+    const top = Math.round((ground - hh) + ((y + 4) - (ground - hh)) * e);
+    const amp = Math.max(0, (k - .6) / .4) * 2;    // só tremula depois de reestaurada
+    for (let i = 0; i < W; i++) {
+      // caída: pano embolado no chão, ondulado; em pé: onda que cresce da haste para a ponta
+      const lay = (1 - e) * (((i * 7) % 3) * .7 - .7);
+      const wave = Math.sin(t * .18 - i * .5) * (i / (W - 1)) * amp;
+      c.drawImage(tc, i, 0, 1, H, x + 9 + i, Math.round(top + lay + wave), 1, hh);
+    }
+    // brilho enquanto se reestaura
+    if (k > 0 && k < 1) for (let j = 0; j < 4; j++) { const a = t * .3 + j * 1.6; D.r(c, x + 24 + Math.cos(a) * 17, top + hh / 2 + Math.sin(a) * 9, 2, 2, j % 2 ? '#ffd21f' : '#ffffff'); }
   };
 
   // Slide do PowerPoint (versão simplificada): círculos ao redor com setas para o círculo central "LULA"
