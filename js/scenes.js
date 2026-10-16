@@ -71,6 +71,12 @@
     const lo = act2 ? 5 : (unlocked(G, 0) ? 0 : 1), hi = act2 ? 14 : 4;
     if (G.pr.R) {
       if (M.cur < hi && unlocked(G, M.cur + 1)) { M.from = M.cur; M.to = M.cur + 1; M.k = 0; G.sfx('sel'); }
+      else if (M.cur === 12 && !unlocked(G, 13)) {
+        // fase 13 trancada: avisa quantas fases ainda faltam
+        let falta = []; for (let i = 1; i <= 12; i++) if (!G.save.won[i]) falta.push(i);
+        G.toast(C.mapa.trancada13.replace('{S}', falta.length > 1 ? 'm' : '').replace('{L}', falta.join(', ')), 200);
+        G.sfx('block');
+      }
       else if (!act2 && M.cur === 4) { G.save.node = 5; G.persist(); G.goMap(); }
     }
     if (G.pr.L) {

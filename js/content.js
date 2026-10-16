@@ -29,7 +29,8 @@ SL.C = {
 
   mapa: {
     entrar: "Aperte {PULO} para entrar na fase",
-    andar: "◄ ► para andar · VIDAS {N}"
+    andar: "◄ ► para andar · VIDAS {N}",
+    trancada13: "Fase 13 trancada! Vença antes as outras fases. Falta{S}: {L}"
   },
 
   missao: { etiqueta: "MISSÃO", continuar: "Aperte {PULO} para continuar ▶", rolar: "Aperte {PULO} para rolar ▼" },
