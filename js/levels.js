@@ -191,8 +191,10 @@
       D.r(c, -6, -1 - o, 12, 2, '#5a5f68'); D.r(c, -6, -1 + o, 12, 2, '#bdc3cc'); D.r(c, -3, -4, 3, 3, '#d8322c'); D.r(c, -3, 1, 3, 3, '#d8322c'); c.restore(); } },
     pedra: { w: 12, h: 12, beh: 'roll', def: { vx: -1.1, shot: ['ink'] }, draw(c, e) { c.fillStyle = K; c.beginPath(); c.arc(e.x + 6, e.y + 6, 6, 0, 7); c.fill(); c.fillStyle = '#8a5a3a'; c.beginPath(); c.arc(e.x + 6, e.y + 6, 5, 0, 7); c.fill(); const a = e.rot || 0; D.r(c, e.x + 6 + Math.cos(a) * 2, e.y + 5 + Math.sin(a) * 2, 2, 2, '#5a3a24'); } },
     tentaculo: { w: 8, h: 24, beh: 'tent', def: { stomp: false, shot: false, vx: 0 }, draw(c, e) {
-      D.r(c, e.x - 3, e.y0 + 22, 14, 3, '#3a3d45'); if (e.h <= 1) return;
-      for (let i = 0; i < e.h; i += 2) { const sx = Math.sin((i + e.t) * .3) * 1.5; D.r(c, e.x + sx, e.y + i, 8, 2, K); D.r(c, e.x + 1 + sx, e.y + i, 6, 2, '#7a3a9a'); if (i % 6 === 2) D.r(c, e.x + 2 + sx, e.y + i, 2, 1, '#c88ae0'); } } },
+      // bueiro
+      D.r(c, e.x - 4, e.y0 + 22, 16, 3, K); D.r(c, e.x - 3, e.y0 + 22, 14, 1, '#5a5f68');
+      if (e.h <= 1) return;
+      SL.drawTent(c, e.x, e.y + e.h, e.h, e.t, 24); } },
     crusher: { w: 24, h: 22, beh: 'crush', def: { stomp: false, shot: false, harm: false, sleep: false, always: true }, draw(c, e) {
       D.r(c, e.x + 10, 0, 4, e.y, '#5a5f68');
       D.box(c, e.x + 6, e.y, 12, 8, '#c0302a'); D.r(c, e.x + 8, e.y + 2, 2, 4, '#fff'); D.r(c, e.x + 13, e.y + 2, 2, 4, '#fff');
@@ -411,16 +413,76 @@
       const h = G.hero; if (!this.done && Math.abs(h.x + 5 - (x + 6)) < 26 && (G.t >> 4) % 2) D.text(c, G.touch ? 'B' : 'X', x + 6, y - 14, '#ffd21f', 5, 'center');
     }
   });
-  // cano do dinheiro do crime (fase 11, E-09)
-  T.pipe = (tx, ty) => tgt({
-    kind: 'pipe', x: tx * 16 + 1, y: ty * 16 + 1, w: 14, h: 14, accept: ['ink'],
-    hit(G) { this.done = true; G.sfx('break'); G.addVotes(3); G.pop(this.x + 7, this.y - 4, '+3', '#ffd21f'); G.burst(this.x + 7, this.y + 7, '#3ec04a', 8); },
-    draw(c, G) {
-      const x = this.x, y = this.y;
-      D.r(c, x - 16, y + 4, 46, 6, '#2e6a3a');
-      D.box(c, x, y, 14, 14, this.done ? '#5a5f68' : '#3ec04a'); D.r(c, x + 2, y + 2, 10, 2, '#7ae08a');
-      if (!this.done && (G.t >> 3) % 3 === 0) D.r(c, x + 5, y + 5, 4, 4, '#ffd21f');
+
+  /* ---------- desenhos compartilhados da fase 11 (polvo / crime organizado) ---------- */
+  // tentáculo cinza saindo do chão: afina até a ponta, balança, ventosas claras de um lado e ponta enrolada
+  const TENT = { k: K, body: '#8a8f99', dark: '#5f656f', lite: '#b9c0ca', cup: '#e4e8ee' };
+  SL.drawTent = (c, x, baseY, hh, t, maxH) => {
+    if (hh < 2) return;
+    const M = maxH || 24, n = Math.floor(hh / 2);
+    let cx = x + 4, top = baseY;
+    for (let k = 0; k < n; k++) {
+      const i = k * 2, f = i / M, y = baseY - i - 2;
+      const w = Math.max(2, Math.round(8 - 5.5 * f));
+      cx = x + 4 + Math.sin(t * .12 + i * .22) * 2.6 * f;
+      const l = Math.round(cx - w / 2);
+      D.r(c, l - 1, y, w + 2, 2, TENT.k);
+      D.r(c, l, y, w, 2, TENT.body);
+      if (w > 3) { D.r(c, l + w - 1, y, 1, 2, TENT.dark); D.r(c, l + 1, y, 1, 2, TENT.lite); }
+      if (k % 3 === 1 && w >= 4) { D.r(c, l - 1, y, 2, 2, TENT.k); D.r(c, l - 1, y, 1, 1, TENT.cup); D.r(c, l, y + 1, 1, 1, TENT.cup); }
+      top = y;
     }
+    // ponta enrolada para o lado
+    const s = Math.sin(t * .12 + hh * .22) >= 0 ? 1 : -1, tx = Math.round(cx);
+    D.r(c, tx - (s > 0 ? 1 : 3), top - 3, 5, 2, TENT.k); D.r(c, tx + (s > 0 ? 2 : -4), top - 2, 2, 3, TENT.k);
+    D.r(c, tx - (s > 0 ? 0 : 2), top - 2, 3, 1, TENT.body);
+  };
+  // cano do Mario: boca larga em cima, corpo descendo até o chão. state: 'on' (verde, jorrando dinheiro) | 'off' (lacrado, cinza)
+  const PIPE_ON = { body: '#2fae4f', lite: '#9af0a0', mid: '#5ad070', dark: '#167a32' };
+  const PIPE_OFF = { body: '#7d848f', lite: '#c9d0d8', mid: '#a3aab4', dark: '#4d525b' };
+  SL.drawPipe = (c, x, y, w, h, off, t, seed) => {
+    const P = off ? PIPE_OFF : PIPE_ON, RH = 8;
+    // corpo
+    D.r(c, x + 1, y + RH, w - 2, h - RH, K);
+    D.r(c, x + 2, y + RH, w - 4, h - RH, P.body);
+    D.r(c, x + 3, y + RH, 2, h - RH, P.lite); D.r(c, x + 6, y + RH, 1, h - RH, P.mid);
+    D.r(c, x + w - 5, y + RH, 2, h - RH, P.dark);
+    D.r(c, x + 2, y + RH, w - 4, 1, P.dark); // sombra da boca sobre o corpo
+    // boca (aro)
+    D.r(c, x - 1, y, w + 2, RH, K);
+    D.r(c, x, y + 1, w, RH - 2, P.body);
+    D.r(c, x + 1, y + 1, 2, RH - 2, P.lite); D.r(c, x + 4, y + 1, 1, RH - 2, P.mid);
+    D.r(c, x + w - 3, y + 1, 2, RH - 2, P.dark);
+    if (off) {
+      // lacrado: tampa parafusada + cadeado
+      D.r(c, x, y - 2, w, 2, K); D.r(c, x + 1, y - 1, w - 2, 1, '#bdc3cc');
+      const lx = x + w / 2 - 3;
+      D.r(c, lx + 1, y - 1, 4, 3, K); D.r(c, lx + 2, y, 2, 2, '#7d848f');
+      D.box(c, lx, y + 2, 6, 5, '#ffd21f'); D.r(c, lx + 2, y + 4, 2, 2, '#8a6a00');
+    } else {
+      // abertura escura e notas de dinheiro sujo jorrando
+      D.r(c, x + 1, y - 1, w - 2, 2, K); D.r(c, x + 2, y, w - 4, 1, '#0a3a18');
+      for (let k = 0; k < 2; k++) {
+        const ph = ((t || 0) + (seed || 0) * 17 + k * 30) % 60;
+        if (ph < 34) {
+          const bx = x + w / 2 - 3 + (k ? 3 : -3) * ph / 34, by = y - 2 - ph * .9 + ph * ph * .02;
+          D.r(c, bx, by, 6, 4, K); D.r(c, bx + 1, by + 1, 4, 2, k ? '#7ad07a' : '#ffd21f');
+        }
+      }
+    }
+  };
+  // cano do dinheiro do crime (fase 11, E-09)
+  // vertical, como no Mario: sai do chão (ou do bloco embaixo) e o corpo inteiro é alvo
+  T.pipe = (tx, ty) => tgt({
+    kind: 'pipe', x: tx * 16, y: ty * 16, w: 16, h: 16, accept: ['ink'], seed: tx,
+    hit(G) { this.done = true; G.sfx('break'); G.addVotes(3); G.pop(this.x + 8, this.y - 4, '+3', '#ffd21f'); G.burst(this.x + 8, this.y + 4, '#3ec04a', 8); },
+    update(G) {
+      if (this.grounded) return;
+      let gy = 12;
+      for (let y = ty + 1; y < 12; y++) if (G.SOLID.has(G.tile(tx, y))) { gy = y; break; }
+      this.h = Math.max(16, (gy - ty) * 16); this.grounded = true;
+    },
+    draw(c, G) { SL.drawPipe(c, this.x, this.y, 16, this.h, this.done, G.t, this.seed); }
   });
 
   /* ================= plataformas móveis ================= */
@@ -1059,6 +1121,7 @@
     b.X(60, 7, 5, 3).X(66, 5, 5, 5).X(72, 8, 4, 2);
     b.X(90, 6, 8, 4).X(98, 8, 3, 2).X(108, 7, 4, 3).X(112, 4, 6, 6).X(118, 7, 3, 3);
     // canos de dinheiro (alvos)
+    // canos de dinheiro (alvos): saem do chão/bloco logo abaixo, como os canos do Mario
     for (const [x, y] of [[18, 5], [41, 2], [52, 8], [68, 3], [84, 8], [94, 4], [114, 2], [130, 8]]) b.t(T.pipe(x, y));
     // tentáculos que saem dos bueiros
     for (const [x, ph] of [[26, 0], [50, 60], [80, 30], [104, 90], [126, 0], [136, 100]]) b.e('tentaculo', x, 10, { ph });

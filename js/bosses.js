@@ -671,44 +671,160 @@
   };
 
   /* ---------- Fase 11 · Polvo do Cofre (A-08) ---------- */
+  // Um cofre-forte de aço com olhos, de onde saem 4 tentáculos cinza, cada um agarrando um saco de dinheiro.
+  // Os 4 canos verdes (estilo Mario, saindo do chão) levam o dinheiro até ele: lacrar um cano = 1 dano.
+  const VAULT = { k: K, steel: '#7d848f', lite: '#b9c0ca', lite2: '#a3aab4', dark: '#4d525b', dark2: '#5a5f68', door: '#9aa3ad', doorL: '#c9d0d8', doorD: '#6a707a', rivet: '#e4e8ee' };
+  function drawVault(c, G, x, y, hero, open, spin) {
+    const V = VAULT, R = (a, b, w, h, col) => D.r(c, x + a, y + b, w, h, col);
+    // pés
+    R(4, 54, 11, 4, V.k); R(37, 54, 11, 4, V.k); R(5, 54, 9, 2, V.dark2); R(38, 54, 9, 2, V.dark2);
+    // caixa de aço com bisel
+    R(0, 0, 52, 55, V.k); R(1, 1, 50, 53, V.steel);
+    R(1, 1, 50, 2, V.lite); R(1, 1, 2, 53, V.lite2); R(1, 52, 50, 2, V.dark); R(49, 1, 2, 53, V.dark2);
+    // rebites dos cantos
+    for (const [rx, ry] of [[4, 4], [46, 4], [4, 49], [46, 49], [25, 4], [25, 49]]) { R(rx, ry, 2, 2, V.rivet); R(rx + 1, ry + 1, 1, 1, V.dark); }
+    // dobradiças
+    R(-2, 12, 5, 8, V.k); R(-1, 13, 3, 6, V.lite2); R(-2, 34, 5, 8, V.k); R(-1, 35, 3, 6, V.lite2);
+    if (open) {
+      // porta escancarada: cofre vazio
+      R(6, 7, 40, 41, V.k); R(7, 8, 38, 39, '#20232a'); R(7, 8, 38, 2, '#14161b');
+      R(9, 38, 34, 1, '#3a3d45'); R(9, 24, 34, 1, '#3a3d45');
+      R(-12, 6, 12, 44, V.k); R(-11, 7, 10, 42, V.door); R(-11, 7, 2, 42, V.doorL); R(-7, 24, 4, 4, V.dark);
+      return;
+    }
+    // porta
+    R(6, 7, 40, 41, V.k); R(7, 8, 38, 39, V.door);
+    R(7, 8, 38, 1, V.doorL); R(7, 8, 1, 39, V.doorL); R(7, 46, 38, 1, V.doorD); R(44, 8, 1, 39, V.doorD);
+    // plaquinha dourada "$"
+    R(19, 10, 14, 7, V.k); R(20, 11, 12, 5, '#ffd21f'); R(20, 11, 12, 1, '#fff2a0');
+    D.text(c, '$', x + 26, y + 10.5, '#8a6a00', 5, 'center', false);
+    // olhos bravos que seguem o herói
+    const dx = hero ? Math.max(-1, Math.min(1, Math.round((hero.x - (x + 26)) / 40))) : -1;
+    for (const ex of [11, 30]) {
+      R(ex, 20, 11, 7, V.k); R(ex + 1, 21, 9, 5, '#ffffff');
+      R(ex + 4 + dx * 2, 22, 3, 3, V.k); R(ex + 4 + dx * 2, 22, 1, 1, '#ffffff');
+    }
+    // sobrancelhas de aço em "V"
+    R(10, 17, 4, 2, V.k); R(14, 18, 4, 2, V.k); R(18, 19, 4, 2, V.k);
+    R(30, 19, 4, 2, V.k); R(34, 18, 4, 2, V.k); R(38, 17, 4, 2, V.k);
+    // segredo (disco com marcações e ponteiro girando)
+    const cx = x + 18, cy = y + 37;
+    c.fillStyle = V.k; c.beginPath(); c.arc(cx, cy, 8, 0, 7); c.fill();
+    c.fillStyle = '#d6dbe2'; c.beginPath(); c.arc(cx, cy, 7, 0, 7); c.fill();
+    c.fillStyle = '#eef1f4'; c.beginPath(); c.arc(cx - 1, cy - 1, 4.5, 0, 7); c.fill();
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; D.r(c, cx + Math.cos(a) * 5.6 - .5, cy + Math.sin(a) * 5.6 - .5, 1, 1, V.dark); }
+    const ang = G.t * .03 + spin;
+    c.strokeStyle = '#d8322c'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(ang) * 5, cy + Math.sin(ang) * 5); c.stroke(); c.lineWidth = 1;
+    D.r(c, cx - 1, cy - 1, 2, 2, V.k);
+    // manivela de 3 raios
+    const hx = x + 36, hy = y + 37, ha = -G.t * .02 - spin * .5;
+    c.strokeStyle = V.k; c.lineWidth = 3;
+    for (let i = 0; i < 3; i++) { const a = ha + i * 2.094; c.beginPath(); c.moveTo(hx, hy); c.lineTo(hx + Math.cos(a) * 6, hy + Math.sin(a) * 6); c.stroke(); }
+    c.strokeStyle = '#ffd21f'; c.lineWidth = 1.4;
+    for (let i = 0; i < 3; i++) { const a = ha + i * 2.094; c.beginPath(); c.moveTo(hx, hy); c.lineTo(hx + Math.cos(a) * 5.4, hy + Math.sin(a) * 5.4); c.stroke(); }
+    c.lineWidth = 1;
+    for (let i = 0; i < 3; i++) { const a = ha + i * 2.094; D.r(c, hx + Math.cos(a) * 6 - 1.5, hy + Math.sin(a) * 6 - 1.5, 3, 3, V.k); D.r(c, hx + Math.cos(a) * 6 - .5, hy + Math.sin(a) * 6 - .5, 1, 1, '#ffd21f'); }
+    D.r(c, hx - 2, hy - 2, 4, 4, V.k); D.r(c, hx - 1, hy - 1, 2, 2, '#ffd21f');
+  }
+  // tentáculo cinza que sai do cofre: grosso na base, fino e enrolado na ponta, com ventosas claras por baixo
+  function drawArm(c, G, rx, ry, a0, curl, len, ph, bag, alpha) {
+    const N = 16, step = len / N, pts = [];
+    let x = rx, y = ry, a = a0;
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      pts.push({ x, y, a, r: 4.6 * (1 - t) + 1.1 });
+      a = a0 + curl * t * t * 1.6 + Math.sin(G.t * .05 + ph + t * 3) * .35 * t;
+      x += Math.cos(a) * step; y += Math.sin(a) * step;
+    }
+    c.save(); c.globalAlpha = alpha;
+    c.fillStyle = K; for (const p of pts) { c.beginPath(); c.arc(p.x, p.y, p.r + 1, 0, 7); c.fill(); }
+    c.fillStyle = '#8a8f99'; for (const p of pts) { c.beginPath(); c.arc(p.x, p.y, p.r, 0, 7); c.fill(); }
+    // brilho no dorso
+    c.fillStyle = '#b9c0ca';
+    for (let i = 0; i < N - 2; i++) { const p = pts[i], nx = Math.sin(p.a), ny = -Math.cos(p.a); c.beginPath(); c.arc(p.x - nx * p.r * .45 * Math.sign(curl || 1), p.y - ny * p.r * .45 * Math.sign(curl || 1), p.r * .35, 0, 7); c.fill(); }
+    // ventosas na barriga
+    for (let i = 1; i < N - 1; i += 2) {
+      const p = pts[i], nx = Math.sin(p.a), ny = -Math.cos(p.a), sx = p.x + nx * p.r * .55 * Math.sign(curl || 1), sy = p.y + ny * p.r * .55 * Math.sign(curl || 1), rr = Math.max(.8, p.r * .32);
+      c.fillStyle = '#5f656f'; c.beginPath(); c.arc(sx, sy, rr + .5, 0, 7); c.fill();
+      c.fillStyle = '#e4e8ee'; c.beginPath(); c.arc(sx, sy, rr, 0, 7); c.fill();
+    }
+    if (bag) {
+      // saco de dinheiro agarrado pela ponta
+      const p = pts[N - 3];
+      const bx = Math.round(p.x), by = Math.round(p.y) + 1;
+      c.fillStyle = K; c.beginPath(); c.arc(bx, by + 4, 5.5, 0, 7); c.fill();
+      c.fillStyle = '#d8a83a'; c.beginPath(); c.arc(bx, by + 4, 4.5, 0, 7); c.fill();
+      c.fillStyle = '#f2cf6a'; c.beginPath(); c.arc(bx - 1.5, by + 2.5, 1.8, 0, 7); c.fill();
+      D.r(c, bx - 2, by - 2, 4, 2, K); D.r(c, bx - 1, by - 1, 2, 1, '#d8a83a');
+      D.text(c, '$', bx, by + 1.5, '#6a4a00', 4, 'center', false);
+    }
+    c.restore();
+  }
   F.polvo = (G, ar) => {
-    const px = ar.x1 - 90, py = FLOOR - 70;
-    // plataformas para alcançar os canos altos
-    for (let x = 0; x < 3; x++) { G.setTile(Math.floor(ar.x0 / 16) + 4 + x, 7, '-'); G.setTile(Math.floor(ar.x0 / 16) + 10 + x, 7, '-'); }
+    const X0 = ar.x0orig != null ? ar.x0orig : ar.x0, T0 = Math.floor(X0 / 16);
+    const vx = ar.x1 - 80, vy = FLOOR - 58;
+    // plataformas para alcançar a boca dos canos altos
+    for (let x = 0; x < 3; x++) { G.setTile(T0 + 4 + x, 7, '-'); G.setTile(T0 + 10 + x, 7, '-'); }
+    // canos do Mario saindo do chão (tiles sólidos 'Y': dá para subir neles).
+    // Baixos: 2 tiles, qualquer tiro conta. Altos: 4 tiles, só a parte de cima (boca) conta — suba na plataforma ao lado.
+    if (!G.SOLID.has('Y')) G.SOLID.add('Y');
     const pipes = [
-      { x: ar.x0 + 20, y: FLOOR - 16 }, { x: ar.x0 + 74, y: 112 - 14 }, { x: ar.x0 + 170, y: 112 - 14 }, { x: ar.x0 + 130, y: FLOOR - 16 }
-    ].map((p, i) => Object.assign(p, { w: 14, h: 14, i, done: false }));
+      { tx: T0 + 3, top: 8, hitRows: [8, 9] },
+      { tx: T0 + 7, top: 6, hitRows: [6, 7] },
+      { tx: T0 + 9, top: 8, hitRows: [8, 9] },
+      { tx: T0 + 13, top: 6, hitRows: [6, 7] }
+    ].map((p, i) => Object.assign(p, { i, done: false, x: p.tx * 16, y: p.top * 16, h: FLOOR - p.top * 16 }));
+    for (const p of pipes) for (let ty = p.top; ty < 10; ty++) G.setTile(p.tx, ty, 'Y');
+    const L = G.L, prevDraw = L.drawTile;
+    L.drawTile = (c, ch, x, y, tx, ty) => { if (ch === 'Y') return; prevDraw && prevDraw(c, ch, x, y, tx, ty); };
+    L.onShotTile = (G, s, tx, ty, ch) => {
+      if (ch !== 'Y' || s.kind !== 'ink' || b.dying) return;
+      const p = pipes.find(p => p.tx === tx);
+      if (!p || p.done || !p.hitRows.includes(ty)) return;
+      p.done = true; safes[p.i].full = false; G.sfx('break'); G.objInc(); G.burst(p.x + 8, p.y + 4, '#3ec04a', 8); b.spin = 6; b.hit(G);
+    };
     const safes = [0, 1, 2, 3].map(i => ({ full: true, a: i }));
+    // raiz, ângulo inicial e curvatura de cada braço (o braço i segura o dinheiro do cano i)
+    const ARMS = [
+      { rx: 2, ry: 44, a0: Math.PI + .1, curl: .9, ph: 0 },
+      { rx: 2, ry: 22, a0: Math.PI + .45, curl: .8, ph: 1.7 },
+      { rx: 14, ry: 2, a0: -Math.PI / 2 - .55, curl: -.9, ph: 3.1 },
+      { rx: 40, ry: 2, a0: -Math.PI / 2 + .25, curl: .9, ph: 4.4 }
+    ];
     const b = base(G, ar, {
-      name: C.fases[11].chefeNome[0], hp: 4, invT: 10, dieT: 150,
+      name: C.fases[11].chefeNome[0], hp: 4, invT: 10, dieT: 150, spin: 0,
       step(G) {
-        for (const p of pipes) if (!p.done && G.shotIn(p, ['ink'])) { p.done = true; safes[p.i].full = false; G.sfx('break'); G.objInc(); b.hit(G); }
-        // tentáculo varre o chão saindo dos bueiros
+        if (b.spin > 0) b.spin = Math.max(0, b.spin - .08);
+        // tentáculo cinza sai do bueiro embaixo do herói
         if (b.t % 150 === 50) {
           const x = G.hero.x - 4;
           G.sfx('suck');
           const z = G.hz({ x, y: FLOOR - 24, w: 8, h: 24, life: 90, harm: false, t0: 0 });
           z.update = (G, z) => { z.t0++; z.harm = z.t0 > 35 && z.t0 < 80; };
-          z.draw = (c, G, z) => { const k = z.t0 < 35 ? 0 : Math.min(1, (z.t0 - 35) / 10) * (z.t0 > 75 ? Math.max(0, (90 - z.t0) / 15) : 1); D.r(c, z.x - 3, FLOOR - 2, 14, 2, z.t0 < 35 && (G.t >> 2) % 2 ? '#ffd21f' : '#3a3d45'); const hh = 24 * k; for (let i = 0; i < hh; i += 2) { D.r(c, z.x, FLOOR - hh + i, 8, 2, K); D.r(c, z.x + 1, FLOOR - hh + i, 6, 2, '#7a3a9a'); } };
+          z.draw = (c, G, z) => {
+            const k = z.t0 < 35 ? 0 : Math.min(1, (z.t0 - 35) / 10) * (z.t0 > 75 ? Math.max(0, (90 - z.t0) / 15) : 1);
+            D.r(c, z.x - 4, FLOOR - 2, 16, 2, K); D.r(c, z.x - 3, FLOOR - 2, 14, 1, z.t0 < 35 && (G.t >> 2) % 2 ? '#ffd21f' : '#5a5f68');
+            SL.drawTent(c, z.x, FLOOR, Math.round(24 * k), z.t0, 24);
+          };
         }
-        hurtIf(G, { x: px + 8, y: py + 6, w: 40, h: 36 });
+        hurtIf(G, { x: vx + 2, y: vy + 2, w: 48, h: 54 });
       },
       die(G) {},
+      cleanup(G) { L.drawTile = prevDraw; L.onShotTile = null; },
       draw(c, G) {
-        for (const p of pipes) { D.r(c, p.x + 4, p.y + 14, 6, FLOOR - p.y - 14, '#2e6a3a'); D.box(c, p.x, p.y, 14, 14, p.done ? '#5a5f68' : (blink(G) ? '#3ec04a' : '#7ae08a')); if (!p.done && (G.t >> 3) % 3 === 0) D.r(c, p.x + 5, p.y + 5, 4, 4, '#ffd21f'); }
-        if (b.dying) { const a = Math.max(0, 1 - b.dying / 60); c.fillStyle = `rgba(20,10,30,${.8 * (1 - a)})`; c.beginPath(); c.arc(px + 28, py + 30, 10 + b.dying * .6, 0, 7); c.fill(); if (a <= 0) { D.box(c, px + 10, FLOOR - 22, 36, 22, '#8a8f99'); return; } c.globalAlpha = a; }
-        D.box(c, px + 10, FLOOR - 22, 36, 22, '#8a8f99'); D.r(c, px + 24, FLOOR - 16, 8, 8, '#5a5f68');
-        // tentáculos com cofres
-        safes.forEach((s, i) => {
-          const a = -2.6 + i * .9 + Math.sin(G.t * .04 + i) * .2, len = s.full ? 34 : 22;
-          const tx = px + 28 + Math.cos(a) * len, ty = py + 26 + Math.sin(a) * len * .8;
-          c.strokeStyle = '#4a1a5a'; c.lineWidth = 5; c.beginPath(); c.moveTo(px + 28, py + 30); c.lineTo(tx, ty); c.stroke(); c.lineWidth = 1;
-          if (s.full) { D.box(c, tx - 5, ty - 5, 10, 10, '#8a8f99'); D.r(c, tx - 1, ty - 1, 3, 3, '#ffd21f'); }
+        for (const p of pipes) SL.drawPipe(c, p.x, p.y, 16, p.h, p.done, G.t, p.i * 7);
+        const shake = b.inv > 0 ? Math.round(Math.sin(G.t * 2.3) * 1.5) : 0;
+        if (b.dying) {
+          const a = Math.max(0, 1 - b.dying / 60);
+          ARMS.forEach((A, i) => drawArm(c, G, vx + A.rx, vy + A.ry, A.a0 + (1 - a) * .9, A.curl, 14 + 16 * a, A.ph, false, a));
+          drawVault(c, G, vx + (a > 0 ? Math.round(Math.sin(G.t) * 2 * a) : 0), vy, G.hero, b.dying > 40, 0);
+          return;
+        }
+        ARMS.forEach((A, i) => {
+          const s = safes[i];
+          drawArm(c, G, vx + A.rx + shake, vy + A.ry, s.full ? A.a0 : A.a0 + (A.a0 < 0 ? .9 : -.7), s.full ? A.curl : A.curl * 1.6, s.full ? 30 : 17, A.ph, s.full, 1);
         });
-        c.fillStyle = K; c.beginPath(); c.ellipse(px + 28, py + 22, 25, 21, 0, 0, 7); c.fill();
-        c.fillStyle = '#4a1a5a'; c.beginPath(); c.ellipse(px + 28, py + 22, 24, 20, 0, 0, 7); c.fill();
-        D.r(c, px + 16, py + 18, 7, 7, '#fff'); D.r(c, px + 33, py + 18, 7, 7, '#fff'); D.r(c, px + 18, py + 21, 3, 3, K); D.r(c, px + 35, py + 21, 3, 3, K);
-        c.globalAlpha = 1;
+        drawVault(c, G, vx + shake, vy, G.hero, false, b.spin);
       }
     });
     return b;
