@@ -15,7 +15,7 @@
 
   /* ================= salvamento ================= */
   const SAVE_KEY = 'sl_save_v1';
-  const fresh = () => ({ won: {}, lives: 13, votes: 0, bone: false, act: 1, node: 0, alck: 0, act2: false, end: false });
+  const fresh = () => ({ won: {}, lives: 13, votes: 0, bone: false, act: 1, node: 1, alck: 0, act2: false, end: false, epi: false });
   G.save = fresh();
   try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.won) G.save = Object.assign(fresh(), s); } catch (e) {}
   G.persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(G.save)); } catch (e) {} };
@@ -784,7 +784,7 @@
     if (n === 4 && !G.save.act2) return placarAto1();
     if (n === 13 && first) return SL.Scenes.urna(G);
     if (n === 13) G.save.node = 14;
-    if (first && n < 13 && n !== 4) G.save.node = n + 1;
+    if (first && n > 0 && n < 13 && n !== 4 && SL.Map.unlocked(G, n + 1)) G.save.node = n + 1;
     G.persist();
     goMap();
   }
@@ -827,6 +827,14 @@
     A.play('suspense');
   }
   G.ato2Cartela = ato2Cartela;
+  // depois da urna: se o epílogo (fase 0) ainda não foi jogado, avisa que a ilha foi liberada
+  G.afterUrna = function () {
+    if (G.save.won[0]) return G.finalCard();
+    G.save.epi = true; G.persist();
+    const K = C.epilogoCartela; G.L = null; G.epiCard = { t: 0 };
+    G.itemDone = () => { G.epiCard = null; G.finalCard(); };
+    card(`<div class="go-tag">${esc(K.tag)}</div><div class="go-head">${esc(K.titulo)}</div><div class="go-sub">${esc(K.texto)}</div><div class="go-hint">${esc(G.tk(C.missao.continuar))}</div>`, 'item');
+  };
 
   /* ---------- cutscene ---------- */
   let cut = null;
@@ -1200,6 +1208,7 @@
     if (s === 'map' || (s === 'dialog' && G.dlgOver === 'map')) { SL.Map.draw(ctx, G); return; }
     if (s === 'cut' && cut) { const f = cut.frames[cut.i]; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); f.draw(ctx, cut.t, G); return; }
     if (s === 'card' && G.fogCard) { fogDraw(); return; }
+    if (s === 'card' && G.epiCard) { G.epiCard.t++; SL.Map.draw(ctx, G, true, 1); ctx.fillStyle = 'rgba(0,0,20,.55)'; ctx.fillRect(0, 0, W, H); return; }
     if (s === 'placar') { SL.Map.draw(ctx, G, true); ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(0, 0, W, H); return; }
     if (s === 'urna' || s === 'credits' || s === 'final') { SL.Scenes.urnaBg(ctx, G); return; }
     if (G.L) {
@@ -1395,7 +1404,7 @@
     const el = $('debug'); el.hidden = false;
     let opts = '<option value="">fase…</option>';
     for (let i = 0; i <= 13; i++) opts += `<option value="${i}">${i} · ${C.fases[i].nome}</option>`;
-    opts += '<option value="placar">Placar Ato 1</option><option value="cond">Condenação</option><option value="urna">Urna</option><option value="unlock">Liberar tudo</option><option value="reset">Apagar progresso</option>';
+    opts += '<option value="placar">Placar Ato 1</option><option value="cond">Condenação</option><option value="urna">Urna</option><option value="epi">Cartela epílogo</option><option value="unlock">Liberar tudo</option><option value="reset">Apagar progresso</option>';
     el.innerHTML = `<select id="dbgSel">${opts}</select><span>i invencível · h colisões · f fps · n concluir · k chefe</span><span id="dbgFps"></span>`;
     $('dbgSel').onchange = e => {
       const v = e.target.value; e.target.blur(); e.target.value = '';
@@ -1403,7 +1412,8 @@
       if (v === 'placar') placarAto1();
       else if (v === 'cond') G.cutscene(SL.Scenes.condenacao(), () => ato2Cartela(), true);
       else if (v === 'urna') SL.Scenes.urna(G);
-      else if (v === 'unlock') { for (let i = 0; i <= 13; i++) G.save.won[i] = true; G.save.act2 = true; G.save.bone = true; G.persist(); goMap(); }
+      else if (v === 'epi') { delete G.save.won[0]; G.afterUrna(); }
+      else if (v === 'unlock') { for (let i = 0; i <= 13; i++) G.save.won[i] = true; G.save.act2 = true; G.save.epi = true; G.save.bone = true; G.persist(); goMap(); }
       else if (v === 'reset') { G.save = fresh(); G.persist(); G.setState('title'); }
       else if (v !== '') startPhase(+v);
     };

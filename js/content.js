@@ -92,6 +92,13 @@ SL.C = {
     texto: "Ela cobre o mapa de 2027 e quer desfazer tudo o que foi reconstruído. Cada fase vencida afasta a névoa de uma região."
   },
 
+  /* ---------- Cartela do epílogo (depois da urna, quando todas as fases 1–13 foram vencidas) ---------- */
+  epilogoCartela: {
+    tag: "EPILOGO",
+    titulo: "Fase do epilogo desbloqueada",
+    texto: "Volte ao início para jogar: uma ilha surgiu no mar, ao lado do mapa do Ato 1."
+  },
+
   /* ---------- Urna (seção 6.10) ---------- */
   urna: {
     titulo: "O fim desse jogo é você quem escolhe",
@@ -105,7 +112,7 @@ SL.C = {
   /* ---------- Fases ---------- */
   fases: [
     { // 0
-      n: 0, nome: "O Tribunal do PowerPoint", ano: "PRÓLOGO", ato: 1,
+      n: 0, nome: "O Tribunal do PowerPoint", ano: "EPILOGO", ato: 1,
       chefeNome: ["PROCURADOR DO POWERPOINT", "JUIZ SUSPEITO"],
       abertura: "Era uma vez um PowerPoint: um monte de setas apontando para o nome do Lula e nenhuma prova. E o juiz ainda combinava o jogo com a acusação. Missão: atravessar o tribunal e desmontar a armação, slide por slide.",
       comando: "{PULO} pula; segure {ACAO} para correr. No fim do tribunal, o projetor desce para carregar os slides: aproveite e pule nos 3 botões dele.",

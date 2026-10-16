@@ -26,21 +26,28 @@
   };
 
   /* ================= mapas ================= */
-  const NODES1 = [[40, 132], [96, 100], [158, 128], [218, 96], [284, 118]];
+  // nó 0 = ilha do epílogo, no mar à esquerda; 1–4 no continente do Ato 1
+  const NODES1 = [[34, 92], [104, 104], [160, 132], [222, 98], [284, 122]];
+  const ISLE = [34, 96];
   const NODES2 = [[60, 62], [106, 52], [150, 74], [196, 60], [240, 86], [206, 118], [168, 138], [120, 126], [92, 150], [268, 140]]; // 5..13 + urna(14)
   const M = { pos: null, from: 0, to: 0, k: 1 };
   SL.Map = M;
+  // fases 1–12 livres em qualquer ordem; a 13 só depois de vencer 1–12; a urna (14) depois da 13;
+  // a 0 (epílogo, na ilha) só depois de zerar 1–13 e passar pela urna
+  const allWon = (G) => { for (let i = 1; i <= 13; i++) if (!G.save.won[i]) return false; return true; };
   const unlocked = (G, n) => {
     const w = G.save.won;
-    if (n === 0) return true;
-    if (n === 5) return !!G.save.act2;
+    if (n === 0) return !!(G.save.epi || G.save.end || w[0]) && allWon(G);
+    if (n <= 12) return true;
+    if (n === 13) { for (let i = 1; i <= 12; i++) if (!w[i]) return false; return true; }
     if (n === 14) return !!w[13];
-    return !!w[n - 1];
+    return false;
   };
+  M.unlocked = unlocked;
   const nodeXY = (G, n) => { const off = (G.W - 336) / 2; const p = n <= 4 ? NODES1[n] : NODES2[n - 5]; return [p[0] + off, p[1]]; };
   M.enter = function (G) {
     let n = G.save.node || 0;
-    if (!unlocked(G, n)) n = 0;
+    if (!unlocked(G, n)) n = 1;
     M.cur = n; M.to = n; M.k = 1; M.t = 0;
     M.bar(G);
   };
@@ -51,7 +58,7 @@
       $('mb2').textContent = C.urna.confirma;
     } else {
       const ph = C.fases[n];
-      $('mb1').textContent = `FASE ${n} · ${ph.ano}`;
+      $('mb1').textContent = n === 0 ? `FASE 0 · EPILOGO · ILHA` : `FASE ${n} · ${ph.ano}`;
       $('mb2').textContent = ph.nome + (G.save.won[n] ? ' ★' : '');
     }
     $('mb3').textContent = tk(C.mapa.entrar);
@@ -61,10 +68,10 @@
     M.t++;
     if (M.k < 1) { M.k = Math.min(1, M.k + .05); if (M.k >= 1) { M.cur = M.to; G.save.node = M.cur; G.persist(); M.bar(G); } return; }
     const act2 = M.cur >= 5;
-    const lo = act2 ? 5 : 0, hi = act2 ? 14 : 4;
+    const lo = act2 ? 5 : (unlocked(G, 0) ? 0 : 1), hi = act2 ? 14 : 4;
     if (G.pr.R) {
       if (M.cur < hi && unlocked(G, M.cur + 1)) { M.from = M.cur; M.to = M.cur + 1; M.k = 0; G.sfx('sel'); }
-      else if (!act2 && M.cur === 4 && G.save.act2) { G.save.node = 5; G.persist(); G.goMap(); }
+      else if (!act2 && M.cur === 4) { G.save.node = 5; G.persist(); G.goMap(); }
     }
     if (G.pr.L) {
       if (M.cur > lo) { M.from = M.cur; M.to = M.cur - 1; M.k = 0; G.sfx('sel'); }
@@ -75,31 +82,38 @@
       if (M.cur === 14) S.urna(G); else G.startPhase(M.cur);
     }
   };
-  M.draw = function (c, G, noHero) {
-    const W = G.W, t = G.t, act2 = (M.cur != null ? M.cur : G.save.node) >= 5;
+  M.draw = function (c, G, noHero, forceAct) {
+    const W = G.W, t = G.t, act2 = forceAct ? forceAct === 2 : (M.cur != null ? M.cur : G.save.node) >= 5;
     const off = (W - 336) / 2;
     if (!act2) {
       // Brasília estilizada vista de cima, com o Congresso no horizonte
       sky(c, W, '#5aa8ff', '#bfe6ff');
       BG.congresso(c, off + 250, 44, '#f4f2ec'); D.r(c, 0, 44, W, 3, '#dfe4ea');
       D.r(c, 0, 47, W, 145, '#2f78c8');
-      c.fillStyle = '#1a6a2a'; c.beginPath(); c.ellipse(W / 2, 124, 160 + off, 66, 0, 0, 7); c.fill();
-      c.fillStyle = '#3ec04a'; c.beginPath(); c.ellipse(W / 2, 120, 156 + off, 62, 0, 0, 7); c.fill();
+      // ondinhas no mar
+      for (let i = 0; i < 18; i++) { const wx = ((i * 47 + (t >> 3)) % (W + 20)) - 10, wy = 56 + (i * 29) % 130; D.r(c, wx, wy, 5, 1, '#5a9ae0'); D.r(c, wx + 2, wy - 1, 2, 1, '#5a9ae0'); }
+      const cx = off + 194;
+      c.fillStyle = '#1a6a2a'; c.beginPath(); c.ellipse(cx, 124, 132, 64, 0, 0, 7); c.fill();
+      c.fillStyle = '#3ec04a'; c.beginPath(); c.ellipse(cx, 120, 128, 60, 0, 0, 7); c.fill();
       // eixo monumental e quadras
-      D.r(c, off + 20, 118, 300, 6, '#dfe4ea'); D.r(c, W / 2 - 3, 66, 6, 104, '#dfe4ea');
-      for (let i = 0; i < 10; i++) D.r(c, off + 30 + i * 28, 104 + (i % 2) * 22, 12, 8, '#2f8a3a');
+      D.r(c, cx - 116, 118, 232, 6, '#dfe4ea'); D.r(c, cx - 3, 66, 6, 104, '#dfe4ea');
+      for (let i = 0; i < 8; i++) D.r(c, cx - 110 + i * 28, 104 + (i % 2) * 22, 12, 8, '#2f8a3a');
+      isle(c, G, off, t);
     } else {
       // Brasil estilizado visto de cima, com a Névoa do Atraso nas regiões não vencidas
       sky(c, W, '#1f78d0', '#5fb2ff');
       c.fillStyle = '#1a6a2a'; poly(c, off, 2); c.fillStyle = '#3ec04a'; poly(c, off, 0);
       for (let n = 5; n <= 13; n++) if (!G.save.won[n]) { const [x, y] = nodeXY(G, n); fog(c, x, y, t, n); }
     }
-    // pontinhos entre nós
-    const lo = act2 ? 5 : 0, hi = act2 ? 14 : 4;
+    // pontinhos entre nós (a travessia até a ilha só aparece quando o epílogo é liberado)
+    const epiOk = unlocked(G, 0);
+    const lo = act2 ? 5 : (epiOk ? 0 : 1), hi = act2 ? 14 : 4;
     for (let n = lo; n < hi; n++) {
       const [ax, ay] = nodeXY(G, n), [bx, by] = nodeXY(G, n + 1);
       for (let k = .15; k < .9; k += .12) D.r(c, ax + (bx - ax) * k - 1, ay + (by - ay) * k - 1, 3, 3, unlocked(G, n + 1) ? '#ffe98a' : '#ffffff55');
     }
+    if (!act2 && !epiOk) { const [x, y] = nodeXY(G, 0); c.fillStyle = K; c.beginPath(); c.arc(x, y, 7, 0, 7); c.fill(); c.fillStyle = '#8a8f99'; c.beginPath(); c.arc(x, y, 6, 0, 7); c.fill(); D.text(c, '?', x, y - 3, '#fff', 5, 'center', false); }
+    if (!act2 && epiOk) { const [x, y] = nodeXY(G, 0); D.text(c, 'EPILOGO', x, y + 16, '#fff', 4, 'center'); }
     for (let n = lo; n <= hi; n++) {
       const [x, y] = nodeXY(G, n);
       if (n === 14) { D.box(c, x - 9, y - 8, 18, 14, unlocked(G, 14) ? '#efe3c0' : '#8a8f99'); D.r(c, x - 6, y - 5, 8, 6, '#1f4a2a'); D.r(c, x + 4, y - 4, 3, 2, '#2fae4f'); continue; }
@@ -108,15 +122,29 @@
       D.text(c, String(n), x, y - 3, '#fff', 5, 'center', false);
       if (G.save.won[n]) D.r(c, x + 4, y - 9, 4, 4, '#fff');
     }
-    if (!act2 && G.save.act2) { const [x, y] = nodeXY(G, 4); D.text(c, '▶ 2027', x + 10, y + 8, '#fff', 5, 'left'); }
+    if (!act2) { const [x, y] = nodeXY(G, 4); D.text(c, '▶ 2027', x + 10, y + 8, '#fff', 5, 'left'); }
     if (act2) { const [x, y] = nodeXY(G, 5); D.text(c, '◀ ATO 1', x - 6, y + 12, '#fff', 5, 'center'); }
     D.text(c, act2 ? 'ATO 2 · BRASIL 2027' : 'ATO 1 · RECONSTRUÇÃO', 10, G.touch ? 30 : 8, '#fff', 6, 'left');
     if (noHero) return;
     const [ax, ay] = nodeXY(G, M.from != null && M.k < 1 ? M.from : M.cur), [bx, by] = nodeXY(G, M.k < 1 ? M.to : M.cur);
     const hx = ax + (bx - ax) * M.k, hy = ay + (by - ay) * M.k;
-    const sp = SL.S[(M.cur >= 5 || M.to >= 5) ? 'lula_ato2' : (G.save.won[0] ? 'lula_ato1' : 'lula_prologo')];
+    const sp = SL.S[(M.cur >= 5 || M.to >= 5) ? 'lula_ato2' : 'lula_ato1'];
     spr(c, sp, M.k < 1 ? walkPose(t) : 'stand', (bx >= ax) ? 1 : -1, hx - 7, hy - 22);
   };
+  // ilha do epílogo, no meio do mar ao lado do continente do Ato 1
+  function isle(c, G, off, t) {
+    const [ix, iy] = ISLE, x = ix + off, ok = unlocked(G, 0);
+    c.fillStyle = '#ffffff55'; c.beginPath(); c.ellipse(x, iy + 2, 30 + Math.sin(t * .05) * 1.5, 13, 0, 0, 7); c.fill();
+    c.fillStyle = '#c8a65a'; c.beginPath(); c.ellipse(x, iy + 1, 27, 11, 0, 0, 7); c.fill();
+    c.fillStyle = '#f0d890'; c.beginPath(); c.ellipse(x, iy - 1, 25, 9, 0, 0, 7); c.fill();
+    c.fillStyle = ok ? '#3ec04a' : '#2f8a3a'; c.beginPath(); c.ellipse(x + 3, iy - 3, 15, 5, 0, 0, 7); c.fill();
+    // coqueiro
+    const px = x + 16, py = iy - 4;
+    D.r(c, px, py - 14, 2, 14, '#8a5a30'); D.r(c, px + 1, py - 9, 1, 2, '#6b3a1e');
+    c.fillStyle = '#1f8a3a';
+    for (const [dx, dy] of [[-7, 1], [7, 1], [-5, -3], [5, -3], [0, -4]]) { c.beginPath(); c.ellipse(px + 1 + dx * .7, py - 15 + dy * .5, 5, 2, Math.atan2(dy, dx) * .4, 0, 7); c.fill(); }
+    D.r(c, px - 1, py - 13, 2, 2, '#6b3a1e'); D.r(c, px + 2, py - 13, 2, 2, '#6b3a1e');
+  }
   function poly(c, off, d) {
     const p = [[70, 40], [130, 30], [190, 40], [250, 56], [296, 80], [286, 110], [260, 130], [236, 150], [200, 168], [168, 180], [140, 176], [118, 160], [96, 140], [64, 120], [44, 96], [40, 70]];
     c.beginPath(); p.forEach(([x, y], i) => i ? c.lineTo(x + off + d, y + d) : c.moveTo(x + off + d, y + d)); c.closePath(); c.fill();
@@ -642,7 +670,7 @@
       return;
     }
     if (U.phase === 'fim') {
-      if (U.t > 110) { U = null; G.save.end = true; G.persist(); G.finalCard(); }
+      if (U.t > 110) { U = null; G.save.end = true; G.persist(); G.afterUrna(); }
       return;
     }
     if (U.phase === 'credits') {
@@ -650,7 +678,7 @@
       const scr = $('uScr'), H = scr.clientHeight;
       U.y = (U.y == null ? 0 : U.y) + .45;
       cr.style.transform = `translateY(${-U.y}px)`;
-      if (U.y > cr.scrollHeight + H || (U.t > 60 && G.pr.J)) { U = null; G.save.end = true; G.persist(); G.finalCard(); }
+      if (U.y > cr.scrollHeight + H || (U.t > 60 && G.pr.J)) { U = null; G.save.end = true; G.persist(); G.afterUrna(); }
     }
   };
   function buildCredits(G) {
