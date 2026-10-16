@@ -825,6 +825,8 @@
     L.scissors = [[40, 7], [72, 8], [88, 6], [118, 8], [140, 7]];
     b.gate(150, 2, 9).g(150, 151);
     b.arena(['serpente']);
+    // 3 plataformas na arena (vazadas: dá para subir pulando por baixo) para alcançar a cabeça da serpente
+    b.p(153, 7, 3).p(159, 5, 4).p(166, 7, 3);
     L.arenaNeed = () => L.gateOpen;
     L.update = (G) => {
       // tesouras voadoras entram pela direita quando o herói chega perto
