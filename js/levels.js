@@ -16,7 +16,7 @@
     { sky: ['#ffb36b', '#ffe9b0'], top: '#3ec04a', fill: '#b0703a', dot: '#8a5a2a', brick: '#e8c040', block: '#c8a030', plat: '#3ec04a' },
     { sky: ['#5aa8ff', '#bfe6ff'], top: '#d86a3a', fill: '#b8502a', dot: '#9a4020', brick: '#4a2a1a', block: '#6a3a24', plat: '#9a6a3a' },
     { sky: ['#4fb2ff', '#bfe6ff'], top: '#b4bac4', fill: '#6f7580', dot: '#5a5f68', brick: '#c0302a', block: '#2449c9', plat: '#169c3c' },
-    { sky: ['#0b0f2e', '#2a2a5e'], top: '#9a9aa0', fill: '#5a4a5a', dot: '#4a3a4a', brick: '#c8743a', block: '#e8c040', plat: '#5aa8ff' },
+    { sky: ['#1c2150', '#f0906a'], top: '#c8ccd4', fill: '#4a4e58', dot: '#3e424b', brick: '#c8743a', block: '#3f6f8f', plat: '#c8ccd4' },
     { sky: ['#ff9a6b', '#4a3f7a'], top: '#5a5d65', fill: '#3a3d45', dot: '#2e3138', brick: '#6cc2f1', block: '#4a90b8', plat: '#6cc2f1' },
     { sky: ['#5a5f68', '#ff9a6b'], top: '#dfe4ea', fill: '#b8bec8', dot: '#a0a6b0', brick: '#9aa0aa', block: '#8a8f99', plat: '#ffd21f' }
   ];
@@ -54,6 +54,157 @@
   };
   BG.sun = (c, x, y, r, col) => { c.fillStyle = col; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); };
   BG.stars = (c, W, t) => { for (let i = 0; i < 40; i++) { const x = rnd(i) * W, y = rnd(i + 99) * 110; if ((t / 20 + i) % 9 > 1) D.r(c, x, y, 1, 1, '#ffffffaa'); } };
+
+
+  // fonte de pixel 3x5 para letreiros do cenário (desenhada no próprio fundo, abaixo dos personagens)
+  const PF = {
+    A: '.#.#.#####.##.#',
+    B: '##.#.###.#.###.',
+    C: '.###..#..#...##',
+    D: '##.#.##.##.###.',
+    E: '####..##.#..###',
+    F: '####..##.#..#..',
+    G: '.###..#.##.#.##',
+    H: '#.##.#####.##.#',
+    I: '###.#..#..#.###',
+    J: '..#..#..##.#.#.',
+    K: '#.##.###.#.##.#',
+    L: '#..#..#..#..###',
+    M: '#.########.##.#',
+    N: '##.#.##.##.##.#',
+    O: '.#.#.##.##.#.#.',
+    P: '##.#.###.#..#..',
+    Q: '.#.#.##.###..##',
+    R: '##.#.###.#.##.#',
+    S: '.###...#...###.',
+    T: '###.#..#..#..#.',
+    U: '#.##.##.##.####',
+    V: '#.##.##.##.#.#.',
+    W: '#.##.########.#',
+    X: '#.##.#.#.#.##.#',
+    Y: '#.##.#.#..#..#.',
+    Z: '###..#.#.#..###',
+    '.': '.............#.',
+    '+': '....#.###.#....',
+    '$': '.####..#..####.',
+    ' ': '...............',
+    0: '.#.#.##.##.#.#.',
+    1: '.#.##..#..#.###'
+  };
+  const ACC = { 'Ã': 'A', 'Õ': 'O' };
+  SL.pixText = (c, str, x, y, col, align) => {
+    str = String(str).toUpperCase();
+    const w = str.length * 4 - 1; let px = Math.round(align === 'left' ? x : x - w / 2); y = Math.round(y);
+    c.fillStyle = col;
+    for (const ch of str) {
+      const base = ACC[ch] || ch, g = PF[base] || PF[' '];
+      for (let i = 0; i < 15; i++) if (g[i] === '#') c.fillRect(px + i % 3, y + Math.floor(i / 3), 1, 1);
+      if (ACC[ch]) { c.fillRect(px, y - 2, 2, 1); c.fillRect(px + 1, y - 3, 2, 1); }
+      px += 4;
+    }
+    return w;
+  };
+  /* Av. Faria Limões (fase 11 e cutscene): fim de tarde no centro financeiro. Torres espelhadas refletindo o
+     pôr do sol, escritórios acesos, letreiros de financeiras de fachada, heliponto, helicóptero executivo,
+     ipês, ciclovia vermelha e a placa azul de rua de São Paulo. */
+  function camada(c, W, cam, k, per, fn) {
+    const off = cam * k, i0 = Math.floor(off / per) - 1, i1 = Math.floor((off + W) / per) + 1;
+    for (let i = i0; i <= i1; i++) fn(i * per - off, i);
+  }
+  // janela de escritório: acesa ou apagada de forma fixa; só 10% das janelas trocam de estado de tempos em tempos
+  function luz(key, t, chance) {
+    let on = rnd(key) < chance;
+    if (rnd(key + 7.31) < .1) { const per = 300 + rnd(key + 3.17) * 600; if (Math.floor((t + rnd(key + 5.73) * per) / per) % 2) on = !on; }
+    return on;
+  }
+  function torre(c, x, w, h, sd, letreiro, t) {
+    const y = 150 - h;
+    // vidro: degradê azul, mais claro em cima
+    const g = c.createLinearGradient(0, y, 0, 150); g.addColorStop(0, '#5a8ab8'); g.addColorStop(1, '#1f3656');
+    D.r(c, x - 1, y - 1, w + 2, h + 1, '#0e1628'); c.fillStyle = g; c.fillRect(x, y, w, h);
+    // reflexo do pôr do sol na diagonal
+    c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+    c.fillStyle = 'rgba(255,170,110,.32)'; const ry = y + 10 + (sd % 5) * 8;
+    c.beginPath(); c.moveTo(x, ry + 26); c.lineTo(x + w, ry); c.lineTo(x + w, ry + 12); c.lineTo(x, ry + 38); c.fill();
+    c.restore();
+    // andares e montantes
+    for (let yy = y + 4; yy < 150; yy += 5) D.r(c, x, yy, w, 1, 'rgba(10,20,40,.45)');
+    for (let xx = x + 5; xx < x + w - 1; xx += 6) D.r(c, xx, y, 1, h, 'rgba(10,20,40,.35)');
+    // salas acesas (gente trabalhando até tarde)
+    for (let yy = y + 6, r = 0; yy < 146; yy += 5, r++) for (let xx = x + 1, k = 0; xx < x + w - 4; xx += 6, k++)
+      if (luz(sd * 13 + r * 7 + k, t, .28)) D.r(c, xx + 1, yy - 1, 3, 2, rnd(sd + r + k * 3) > .5 ? '#ffe6a0' : '#bfe6ff');
+    D.r(c, x + w - 2, y, 2, h, 'rgba(0,0,0,.25)');
+    // coroa do prédio
+    const tipo = sd % 3;
+    if (tipo === 0) { // heliponto
+      D.r(c, x - 2, y - 3, w + 4, 3, '#2a3040');
+      c.fillStyle = '#ffd21f'; c.beginPath(); c.ellipse(x + w / 2, y - 4, Math.min(12, w / 2 - 2), 2.2, 0, 0, 7); c.fill();
+      c.fillStyle = '#2a3040'; c.beginPath(); c.ellipse(x + w / 2, y - 4, Math.min(10, w / 2 - 4), 1.4, 0, 0, 7); c.fill();
+      D.r(c, x + w / 2 - 2, y - 5, 1, 2, '#ffffff'); D.r(c, x + w / 2 + 1, y - 5, 1, 2, '#ffffff'); D.r(c, x + w / 2 - 1, y - 4, 2, 1, '#ffffff');
+    } else if (tipo === 1) { // topo escalonado com antena
+      D.r(c, x + 4, y - 6, w - 8, 6, '#24406a'); D.r(c, x + 9, y - 11, w - 18, 5, '#2c4a78');
+      D.r(c, x + w / 2, y - 24, 1, 13, '#8a8f99'); if ((t >> 5) % 2) D.r(c, x + w / 2 - 1, y - 25, 3, 2, '#ff4a3a');
+    } else { // topo inclinado
+      c.fillStyle = '#0e1628'; c.beginPath(); c.moveTo(x - 1, y); c.lineTo(x + w + 1, y - 14); c.lineTo(x + w + 1, y); c.fill();
+      c.fillStyle = '#3a6a98'; c.beginPath(); c.moveTo(x, y); c.lineTo(x + w, y - 13); c.lineTo(x + w, y); c.fill();
+    }
+    // letreiro luminoso da financeira
+    if (letreiro) {
+      const lw = letreiro.length * 4 + 5, lx = Math.round(x + (w - lw) / 2), ly = y + 6;
+      D.r(c, lx, ly, lw, 11, '#0a0e18'); D.r(c, lx, ly, lw, 1, '#3a4258');
+      SL.pixText(c, letreiro, x + w / 2, ly + 4, sd % 2 ? '#7af0b0' : '#ffd07a');
+    }
+  }
+  function ipe(c, x, y, col) {
+    D.r(c, x - 1, y - 18, 3, 18, '#4a2e22'); D.r(c, x - 5, y - 16, 4, 1, '#4a2e22'); D.r(c, x + 2, y - 14, 4, 1, '#4a2e22');
+    c.fillStyle = col; for (const [dx, dy, r] of [[-6, -20, 6], [5, -21, 6], [0, -26, 7], [-2, -18, 5], [7, -16, 4]]) { c.beginPath(); c.arc(x + dx, y + dy, r, 0, 7); c.fill(); }
+    c.fillStyle = 'rgba(255,255,255,.25)'; c.beginPath(); c.arc(x - 2, y - 28, 3, 0, 7); c.fill();
+  }
+  function helicoptero(c, x, y, t) {
+    D.r(c, x, y, 12, 5, '#1a1f2e'); D.r(c, x + 1, y + 1, 4, 3, '#7ab8e0'); D.r(c, x + 12, y + 1, 10, 2, '#1a1f2e'); D.r(c, x + 20, y - 1, 2, 4, '#1a1f2e');
+    D.r(c, x + 2, y + 6, 9, 1, '#1a1f2e'); D.r(c, x + 5, y - 2, 2, 2, '#1a1f2e');
+    const r = (t >> 1) % 2 ? 22 : 14; D.r(c, x + 6 - r / 2, y - 3, r, 1, '#3a4050');
+    if ((t >> 4) % 2) D.r(c, x + 21, y + 2, 1, 1, '#ff4a3a');
+  }
+  BG.farialima = (c, W, cam, t, letreiros) => {
+    const LT = letreiros || ['CAPITAL+'];
+    // céu de fim de tarde (sobrepõe o degradê do tema)
+    const g = c.createLinearGradient(0, 0, 0, 160); g.addColorStop(0, '#1c2150'); g.addColorStop(.55, '#6a4a8a'); g.addColorStop(1, '#f0906a');
+    c.fillStyle = g; c.fillRect(0, 0, W, 192);
+    for (let i = 0; i < 18; i++) { const x = rnd(i) * W, y = rnd(i + 99) * 50; if ((t / 25 + i) % 9 > 1) D.r(c, x, y, 1, 1, '#ffffff99'); }
+    // sol se pondo entre os prédios
+    c.fillStyle = 'rgba(255,200,120,.9)'; c.beginPath(); c.arc(W * .72, 128, 16, 0, 7); c.fill();
+    // helicóptero executivo cruzando o céu
+    const hx = ((t * .5) % (W + 240)) - 120; helicoptero(c, W - hx, 34 + Math.sin(t * .03) * 3, t);
+    // 1) skyline distante
+    camada(c, W, cam, .1, 34, (x, i) => {
+      const h = 50 + rnd(i * 3) * 60; D.r(c, x, 150 - h, 30, h, '#3a3466');
+      // janelas presas ao prédio (índice da linha/coluna), não à posição na tela: não piscam quando a câmera anda
+      for (let yy = 150 - h + 4, r = 0; yy < 148; yy += 6, r++) for (let k = 0; k < 5; k++) if (luz(i * 31 + r * 7 + k + .5, t, .3)) D.r(c, x + 3 + k * 6, yy, 2, 2, '#c8a0a0');
+    });
+    // 2) torres espelhadas da avenida, com os letreiros
+    camada(c, W, cam, .3, 64, (x, i) => {
+      const w = 40 + Math.floor(rnd(i * 7) * 16), h = 78 + Math.floor(rnd(i * 11) * 52);
+      torre(c, x + (64 - w) / 2, w, h, Math.abs(i) * 5 + (i < 0 ? 1 : 0) + 3, rnd(i * 17) > .35 ? LT[Math.abs(i) % LT.length] : null, t);
+    });
+    // 3) calçada da avenida: ipês, postes e a placa azul de rua
+    camada(c, W, cam, .55, 150, (x, i) => {
+      ipe(c, x + 30, 152, i % 2 ? '#e86aa8' : '#ffd23a');
+      // poste
+      D.r(c, x + 100, 92, 2, 60, '#2a2e38'); D.r(c, x + 100, 92, 12, 2, '#2a2e38'); D.r(c, x + 109, 94, 6, 2, '#ffe6a0');
+      c.fillStyle = 'rgba(255,230,160,.12)'; c.beginPath(); c.moveTo(x + 110, 96); c.lineTo(x + 96, 152); c.lineTo(x + 126, 152); c.fill();
+      if (i % 2 === 0) {
+        // placa azul de rua (padrão de São Paulo)
+        const nome = 'AV. FARIA LIMÕES', pw = nome.length * 4 + 7;
+        D.r(c, x + 64, 112, 2, 40, '#2a2e38');
+        D.r(c, x + 65 - pw / 2, 101, pw, 13, '#ffffff'); D.r(c, x + 66 - pw / 2, 102, pw - 2, 11, '#1f4fa8');
+        SL.pixText(c, nome, x + 65, 106, '#ffffff');
+      }
+    });
+    // ciclovia vermelha no canteiro
+    D.r(c, 0, 150, W, 2, '#3a3d45'); D.r(c, 0, 152, W, 6, '#b8342c');
+    for (let x = -((cam * .55) % 40); x < W; x += 40) D.r(c, x, 154, 12, 1, '#ffffff');
+  };
   BG.clouds = (c, cam, W, col) => { for (let i = 0; i < 6; i++) { const x = ((i * 97 - cam * .1) % (W + 80) + W + 80) % (W + 80) - 40, y = 20 + rnd(i) * 40; D.r(c, x, y, 26, 6, col); D.r(c, x + 5, y - 4, 14, 5, col); } };
   // silhuetas de Brasília
   BG.congresso = (c, x, y, col) => { D.r(c, x, y - 40, 7, 40, col); D.r(c, x + 9, y - 40, 7, 40, col); D.r(c, x - 40, y - 6, 100, 6, col);
@@ -1115,7 +1266,7 @@
     const b = builder(11, 172), L = b.L;
     L.action = 'ink';
     b.g(0, 172);
-    // escadarias e lajes subindo o morro
+    // escadarias e blocos de vidro entre as torres da avenida
     b.stairs(12, 3).X(15, 7, 6, 3).stairs(21, 3, -1);
     b.X(30, 8, 4, 2).X(34, 6, 4, 4).X(38, 4, 6, 6).X(44, 7, 3, 3);
     b.X(60, 7, 5, 3).X(66, 5, 5, 5).X(72, 8, 4, 2);
@@ -1125,20 +1276,13 @@
     for (const [x, y] of [[18, 5], [41, 2], [52, 8], [68, 3], [84, 8], [94, 4], [114, 2], [130, 8]]) b.t(T.pipe(x, y));
     // tentáculos que saem dos bueiros
     for (const [x, ph] of [[26, 0], [50, 60], [80, 30], [104, 90], [126, 0], [136, 100]]) b.e('tentaculo', x, 10, { ph });
-    // moradores apontam o caminho (nunca são alvo)
-    const res = (i) => person(i + 10);
+    // pedestres da avenida (gente de terno a caminho do escritório) apontam o caminho (nunca são alvo)
+    const res = (i) => person(i + 10, { suit: pick(['#2a2f3a', '#1f2a44', '#3a3f4a', '#4a4f5a'], i), shirt: pick(['#2a2f3a', '#1f2a44', '#3a3f4a', '#4a4f5a'], i), pants: '#22252c' });
     for (const [x, y] of [[8, 10], [36, 6], [56, 10], [70, 5], [96, 6], [124, 10], [140, 10]]) b.npc(res(x), x, y, { face: 1, mode: 'point' });
     b.q(5, 6).q(6, 6, 'picanha').q(78, 5, 'star').coins(38, 3, 6).coins(66, 4, 5).coins(112, 3, 6);
     b.cp(58).cp(100);
     b.arena(['polvo']);
-    L.bg = (c, cam, G) => {
-      BG.stars(c, G.W, G.t);
-      const off = cam * .3;
-      for (let i = Math.floor(off / 26) - 1; i < Math.floor((off + G.W) / 26) + 2; i++) {
-        const x = i * 26 - off, hh = 30 + rnd(i) * 50 + Math.sin(i * .2) * 20, col = pick(['#c8743a', '#e8c040', '#5aa8ff', '#e85a9a', '#3ec04a'], i);
-        D.r(c, x, 150 - hh, 24, hh, SL.shade(col, -.35)); for (let yy = 150 - hh + 6; yy < 146; yy += 10) if (rnd(i + yy) > .4) D.r(c, x + 6, yy, 4, 4, '#ffd21f');
-      }
-    };
+    L.bg = (c, cam, G) => BG.farialima(c, G.W, cam, G.t, C.fases[11].textoMotor.letreiros);
     L.handItem = (c, G, h) => { const x = h.x + (h.face > 0 ? 9 : -3); D.r(c, x, h.y + 8, 4, 1, '#1a2a6a'); };
     return L;
   };

@@ -577,12 +577,20 @@
 
   CUT[11] = () => [
     fr(11, 0, (c, t, G) => {
-      const W = G.W; sky(c, W, '#0b0f2e', '#2a2a5e'); BG.stars(c, W, G.t);
-      for (let i = 0; i < 16; i++) { const x = i * 24, hh = 40 + (8 - Math.abs(i - 7)) * 10; D.r(c, x, 160 - hh, 22, hh, ['#c8743a', '#e8c040', '#5aa8ff', '#e85a9a'][i % 4]); D.r(c, x + 6, 160 - hh + 8, 4, 4, '#ffd21f'); }
-      const sx = W / 2 - 16, sy = 34; D.box(c, sx, sy, 32, 26, '#8a8f99'); D.r(c, sx + 13, sy + 9, 6, 6, '#5a5f68');
-      for (let i = 0; i < 6; i++) { const a = .3 + i * .45, len = Math.min(110, t * 1.2); c.strokeStyle = '#4a1a5a'; c.lineWidth = 5; c.beginPath(); c.moveTo(sx + 16, sy + 26); c.quadraticCurveTo(sx + 16 + Math.cos(a + 2) * 40, sy + 60, sx + 16 + Math.cos(Math.PI - a) * len, sy + 26 + Math.sin(a) * len * .9); c.stroke(); }
-      c.lineWidth = 1;
-      ground(c, W, 160, '#9a9aa0', '#5a4a5a');
+      const W = G.W; BG.farialima(c, W, t * .6, G.t, C.fases[11].textoMotor.letreiros);
+      ground(c, W, 160, '#c8ccd4', '#4a4e58');
+      // o Polvo do Cofre (mesmo desenho do chefe): cofre de aço no meio da Av. Faria Limões, tentáculos cinza
+      // se esticando sobre os escritórios e voltando com sacos de dinheiro
+      const vx = W / 2 - 26, vy = 160 - 58, grow = Math.min(1, t / 90);
+      const arms = [
+        { rx: 2, ry: 40, a0: Math.PI + .15, curl: .7 }, { rx: 2, ry: 16, a0: Math.PI + .6, curl: .8 },
+        { rx: 12, ry: 2, a0: -Math.PI / 2 - .7, curl: -.6 }, { rx: 40, ry: 2, a0: -Math.PI / 2 + .7, curl: .6 },
+        { rx: 50, ry: 16, a0: -.6, curl: -.8 }, { rx: 50, ry: 40, a0: -.15, curl: -.7 }
+      ];
+      c.save(); c.translate(W / 2, 160); c.scale(1.25, 1.25); c.translate(-W / 2, -160);
+      arms.forEach((A, i) => SL.Bosses.drawArm(c, G, vx + A.rx, vy + A.ry, A.a0, A.curl, 16 + 54 * grow, i * 1.1, grow >= 1, 1));
+      SL.Bosses.drawVault(c, G, vx, vy, { x: W / 2 + Math.sin(t * .03) * 60 }, false, t > 100 ? 0 : t * .05);
+      c.restore();
     }, 200)
   ];
 

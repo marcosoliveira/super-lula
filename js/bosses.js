@@ -728,7 +728,7 @@
   }
   // tentáculo cinza que sai do cofre: grosso na base, fino e enrolado na ponta, com ventosas claras por baixo
   function drawArm(c, G, rx, ry, a0, curl, len, ph, bag, alpha) {
-    const N = 16, step = len / N, pts = [];
+    const N = Math.max(16, Math.round(len / 1.8)), step = len / N, pts = [];
     let x = rx, y = ry, a = a0;
     for (let i = 0; i <= N; i++) {
       const t = i / N;
@@ -931,6 +931,8 @@
     return b;
   };
   SL.Bosses.drawLion = drawLion;
+  SL.Bosses.drawVault = drawVault;
+  SL.Bosses.drawArm = drawArm;
   SL.Bosses.drawRei = drawRei;
   SL.Bosses.bigScissor = bigScissor;
   SL.Bosses.smallScissor = smallScissor;

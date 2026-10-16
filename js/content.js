@@ -243,12 +243,14 @@ SL.C = {
       n: 11, nome: "O Polvo do Cofre", ano: "2027", ato: 2,
       chefeNome: ["POLVO DO COFRE"],
       abertura: "O crime organizado tem tentáculos em tudo, mas o coração dele é o cofre. Missão: seguir o dinheiro, cano por cano, até o cofre do Polvo.",
-      comando: "Aperte {ACAO} para atirar nos canos por onde passa o dinheiro do crime. Os moradores mostram o caminho.",
+      comando: "Aperte {ACAO} para atirar nos canos por onde passa o dinheiro do crime. Os pedestres da avenida mostram o caminho.",
       tropeco: ["Enrolado!", "Um tentáculo do Polvo pegou você."],
       final: "Lula vai atrás do dinheiro do crime: R$ 35,8 bilhões de prejuízo às facções, Lei Antifacção e forças integradas nos estados. No Senado, Flavinho nunca aprovou um projeto de lei seu, nem contra o crime: foram 53 como primeiro autor e nenhum virou lei. Na Alerj, deu a Medalha Tiradentes a Adriano da Nóbrega quando ele estava preso, acusado de homicídio. Adriano foi depois apontado como chefe do Escritório do Crime.",
       placar: ["Facções", "asfixia financeira"],
       fontes: ["senado", "bbcAdriano", "planoLula27"],
-      revisaoJuridica: true, revisaoNota: "tela final"
+      revisaoJuridica: true, revisaoNota: "tela final",
+      // letreiros das torres da Av. Faria Limões: nomes inventados de financeiras de fachada
+      textoMotor: { letreiros: ["FUNDO OCULTO", "LARANJA S.A.", "CAPITAL+", "LIMÃO INVEST", "HOLDING X", "FINTECH $"] }
     },
     { // 12
       n: 12, nome: "A Mordida do Leão", ano: "2027", ato: 2,
@@ -288,7 +290,7 @@ SL.C = {
     ["NA PORTA DA ESCOLA", "O PÉ-DE-MEIA"],
     ["MINA NO CERRADO", "A DRAGA"],
     ["NO CAIS"],
-    ["NO ALTO DO MORRO"],
+    ["AV. FARIA LIMÕES"],
     ["DIA DE PAGAMENTO", "ENQUANTO ISSO, OS RICOS..."],
     ["PRAÇA DOS TRÊS PODERES", "O DRAGÃO"]
   ],
