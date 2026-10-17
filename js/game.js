@@ -55,30 +55,98 @@
     resize(); refreshTexts();
   }
   try { if (matchMedia('(pointer:coarse)').matches) touchOn(); } catch (e) {}
-  addEventListener('touchstart', () => { touchOn(); A.unlock(); }, { passive: true });
 
   const vib = () => { try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} };
-  // botões A, B, II
+  /* Controles de toque.
+     No iOS os eventos de ponteiro às vezes perdem o "soltar" de um dedo quando outro dedo encosta ou sai
+     ao mesmo tempo (o botão ficava preso). Aqui o estado é recalculado do zero a cada evento de toque a
+     partir de e.touches — a lista oficial de dedos na tela —, então um "soltar" perdido é corrigido no
+     evento seguinte. Cada dedo pertence ao controle onde encostou; no direcional, deslizar troca a
+     direção; nos botões, deslizar de A para B (e vice-versa) troca o botão. */
+  const TC = { P: $('tP'), A: $('tA'), B: $('tB'), pad: $('dpad') };
+  const TKEY = { A: 'J', B: 'A', P: 'P' };
+  const own = new Map(); // id do toque -> 'pad' | 'A' | 'B' | 'P'
+  const held = { L: 0, R: 0, J: 0, A: 0, P: 0 };
+  const rectOf = el => { const r = el.getBoundingClientRect(); return r.width ? r : null; };
+  const inR = (r, x, y, m) => r && x >= r.left - m && x <= r.right + m && y >= r.top - m && y <= r.bottom + m;
+  const ctr = r => [(r.left + r.right) / 2, (r.top + r.bottom) / 2];
+  function nearestAB(x, y) {
+    const a = rectOf(TC.A), b = rectOf(TC.B); if (!a || !b) return a ? 'A' : b ? 'B' : null;
+    const [ax, ay] = ctr(a), [bx, by] = ctr(b);
+    return (x - ax) ** 2 + (y - ay) ** 2 <= (x - bx) ** 2 + (y - by) ** 2 ? 'A' : 'B';
+  }
+  function zoneAt(x, y) {
+    if (!G.touch) return null;
+    const p = rectOf(TC.P); if (inR(p, x, y, 10)) return 'P';
+    const pad = rectOf(TC.pad);
+    if (pad && x <= pad.right + 24 && y >= pad.top - 36) return 'pad';
+    const a = rectOf(TC.A), b = rectOf(TC.B);
+    if (inR(a, x, y, 22) || inR(b, x, y, 22)) return nearestAB(x, y);
+    return null;
+  }
+  function padDir(x) { const r = rectOf(TC.pad); if (!r) return 'R'; return x < (r.left + r.right) / 2 ? 'L' : 'R'; }
+  function applyHeld(n) {
+    for (const k of ['L', 'R', 'J', 'A', 'P']) {
+      if (n[k] && !held[k]) { press(k); vib(); }
+      held[k] = n[k];
+      if (k in G.in) G.in[k] = n[k];
+    }
+    const sp = TC.pad.querySelectorAll('span');
+    sp[0] && sp[0].classList.toggle('on', !!n.L); sp[1] && sp[1].classList.toggle('on', !!n.R);
+    TC.A.classList.toggle('on', !!n.J); TC.B.classList.toggle('on', !!n.A); TC.P.classList.toggle('on', !!n.P);
+  }
+  function syncTouches(list) {
+    const n = { L: 0, R: 0, J: 0, A: 0, P: 0 }, alive = new Set();
+    for (let i = 0; i < list.length; i++) {
+      const t = list[i], z = own.get(t.identifier); if (!z) continue;
+      alive.add(t.identifier);
+      if (z === 'pad') n[padDir(t.clientX)] = 1;
+      else if (z === 'A' || z === 'B') {
+        const zz = zoneAt(t.clientX, t.clientY); const k = (zz === 'A' || zz === 'B') ? zz : z;
+        own.set(t.identifier, k); n[TKEY[k]] = 1;
+      } else n[TKEY[z]] = 1;
+    }
+    for (const id of [...own.keys()]) if (!alive.has(id)) own.delete(id);
+    applyHeld(n);
+  }
+  function releaseAll() { own.clear(); applyHeld({ L: 0, R: 0, J: 0, A: 0, P: 0 }); }
+  G.releaseTouch = releaseAll;
+  document.addEventListener('touchstart', e => {
+    touchOn(); A.unlock();
+    let mine = false;
+    for (const t of e.changedTouches) { const z = zoneAt(t.clientX, t.clientY); if (z) { own.set(t.identifier, z); mine = true; } }
+    if (mine && e.cancelable) e.preventDefault();
+    syncTouches(e.touches);
+  }, { passive: false, capture: true });
+  document.addEventListener('touchmove', e => {
+    let mine = false; for (const t of e.changedTouches) if (own.has(t.identifier)) mine = true;
+    if (mine && e.cancelable) e.preventDefault();
+    syncTouches(e.touches);
+  }, { passive: false, capture: true });
+  const touchUp = e => {
+    let mine = false; for (const t of e.changedTouches) if (own.has(t.identifier)) mine = true;
+    if (mine && e.cancelable) e.preventDefault();
+    A.unlock();
+    syncTouches(e.touches);
+  };
+  document.addEventListener('touchend', touchUp, { passive: false, capture: true });
+  document.addEventListener('touchcancel', touchUp, { passive: false, capture: true });
+  addEventListener('blur', releaseAll); addEventListener('pagehide', releaseAll);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
+  // mouse/caneta (sem toque): mantém os botões clicáveis
   function bindBtn(el, key) {
-    const on = e => { e.preventDefault(); touchOn(); A.unlock(); el.classList.add('on'); vib(); press(key); if (key in G.in) G.in[key] = 1; try { el.setPointerCapture(e.pointerId); } catch (x) {} };
-    const off = e => { el.classList.remove('on'); if (key in G.in) G.in[key] = 0; };
+    const on = e => { if (e.pointerType === 'touch') return; e.preventDefault(); A.unlock(); el.classList.add('on'); press(key); if (key in G.in) G.in[key] = 1; try { el.setPointerCapture(e.pointerId); } catch (x) {} };
+    const off = e => { if (e.pointerType === 'touch') return; el.classList.remove('on'); if (key in G.in) G.in[key] = 0; };
     el.addEventListener('pointerdown', on);
     el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off); el.addEventListener('lostpointercapture', off);
   }
   bindBtn($('tA'), 'J'); bindBtn($('tB'), 'A'); bindBtn($('tP'), 'P');
-  // direcional: o bloco inteiro é área de toque; deslizar troca a direção
   (function () {
-    const pad = $('dpad'), spans = pad.querySelectorAll('span'); const ptrs = new Map();
-    function recompute() {
-      let l = 0, r = 0; for (const d of ptrs.values()) { if (d === 'L') l = 1; if (d === 'R') r = 1; }
-      if (l && !G.in.L) { press('L'); vib(); } if (r && !G.in.R) { press('R'); vib(); }
-      G.in.L = l; G.in.R = r;
-      spans[0].classList.toggle('on', !!l); spans[1].classList.toggle('on', !!r);
-    }
-    const dirAt = e => { const b = pad.getBoundingClientRect(); return e.clientX < b.left + b.width / 2 ? 'L' : 'R'; };
-    pad.addEventListener('pointerdown', e => { e.preventDefault(); touchOn(); A.unlock(); try { pad.setPointerCapture(e.pointerId); } catch (x) {} ptrs.set(e.pointerId, dirAt(e)); recompute(); });
-    pad.addEventListener('pointermove', e => { if (ptrs.has(e.pointerId)) { ptrs.set(e.pointerId, dirAt(e)); recompute(); } });
-    const up = e => { ptrs.delete(e.pointerId); recompute(); };
+    const pad = $('dpad'), spans = pad.querySelectorAll('span'); let pid = null;
+    const set = d => { G.in.L = d === 'L' ? 1 : 0; G.in.R = d === 'R' ? 1 : 0; spans[0].classList.toggle('on', d === 'L'); spans[1].classList.toggle('on', d === 'R'); };
+    pad.addEventListener('pointerdown', e => { if (e.pointerType === 'touch') return; e.preventDefault(); pid = e.pointerId; try { pad.setPointerCapture(pid); } catch (x) {} const d = padDir(e.clientX); press(d); set(d); });
+    pad.addEventListener('pointermove', e => { if (e.pointerId === pid) set(padDir(e.clientX)); });
+    const up = e => { if (e.pointerId === pid) { pid = null; set(null); } };
     pad.addEventListener('pointerup', up); pad.addEventListener('pointercancel', up); pad.addEventListener('lostpointercapture', up);
   })();
   // toque no palco: na abertura começa; nas caixas avança
@@ -119,8 +187,9 @@
     let w = 336;
     if (full) {
       if (scrollX || scrollY) scrollTo(0, 0);
-      w = Math.max(336, Math.min(600, Math.floor(192 * vw / vh)));
-      const hh = Math.min(vh, vw * 192 / w), ww = hh * w / 192;
+      w = Math.max(336, Math.min(1000, Math.floor(192 * vw / vh)));
+      // ocupa a tela inteira (a diferença de arredondamento, menor que 1 bloco de pixel, é esticada)
+      const hh = vh, ww = vw;
       st.style.width = ww + 'px'; st.style.height = hh + 'px'; st.style.setProperty('--u', (hh * 1.75 / 100) + 'px');
     } else { st.style.width = ''; st.style.height = ''; st.style.removeProperty('--u'); }
     if (cv.width !== w) { cv.width = w; cv.height = H; }
@@ -131,7 +200,7 @@
   }
   // o iOS dispara os eventos antes de terminar a rotação: mede de novo quando assentar
   const resizeSoon = () => { resize(); [120, 350, 800].forEach(t => setTimeout(resize, t)); };
-  addEventListener('resize', resizeSoon); addEventListener('orientationchange', resizeSoon);
+  addEventListener('resize', resizeSoon); addEventListener('orientationchange', () => { releaseAll(); resizeSoon(); });
   addEventListener('pageshow', resizeSoon);
   if (window.visualViewport) visualViewport.addEventListener('resize', resize);
   try { new ResizeObserver(() => resize()).observe($('vp')); } catch (e) {}
@@ -605,7 +674,8 @@
       L.bridges = (L.bridges || []).filter(b => !inside(b.x * 16, 16));
     }
     ar.x0 = want;
-    if (ar.locked) L.wallL = want;
+    // a parede esquerda da arena nunca fica dentro da tela: enquanto a câmera desliza até a arena, ela acompanha a borda da tela
+    if (ar.locked) L.wallL = Math.min(want, Math.max(0, Math.floor(G.cam)));
   }
   G.fitArena = fitArena;
   function respawnBoss() {

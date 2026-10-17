@@ -1322,18 +1322,7 @@
       const ln = L.lion; if (ln.x != null) return;
       ln.x = G.cam + G.W / 2 - 32; ln.drop = 0; ln.passed = 0; ln.extra = 0;
     };
-    L.autoscroll = (G) => {
-      const h = G.hero;
-      if (h.x > 110 * 16) return false;
-      const target = G.clampCam(Math.max(L.scroll || 0, h.x + 5 - G.W * .62));
-      L.scroll = Math.min(G.clampCam(110 * 16 - G.W * .4), Math.max(target, (L.scroll || 0) + .75));
-      G.cam = L.scroll;
-      // no celular, a borda esquerda fica à frente dos direcionais
-      const lim = G.cam + Math.max(2, G.touchSafeX ? G.touchSafeX() : 0);
-      if (h.x < lim) { h.x = lim; if (h.vx < 0) h.vx = 0; }
-      return true;
-    };
-    L.onRespawn = (G) => { L.scroll = G.clampCam(G.hero.x - 60); G.cam = L.scroll; };
+    // sem rolagem forçada: a câmera segue o herói livremente (ele pode voltar para trás)
     L.update = (G) => {
       lionInit(G); const ln = L.lion; ln.t++;
       const h = G.hero;
